@@ -5,6 +5,7 @@ import com.centromedico.ms_personal.entity.Empleado;
 import com.centromedico.ms_personal.entity.Rol;
 import com.centromedico.ms_personal.repository.EmpleadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder; // Importación nueva
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,8 +17,12 @@ public class ServicioPersonal {
     @Autowired
     private EmpleadoRepository empleadoRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder; // Inyectamos el Bean de Spring Security
+
     public Empleado crearEmpleado(Empleado empleado){
-        //esto es para encriptar pero no se porque me sale error   empleado.setContraseña(passwordEncoder.encode(empleado.getContraseña()));
+        // Encriptamos la contraseña antes de guardar en la base de datos
+        empleado.setContraseña(passwordEncoder.encode(empleado.getContraseña()));
         return empleadoRepository.save(empleado);
     }
 
@@ -36,6 +41,8 @@ public class ServicioPersonal {
             empleadoExistente.setDni(empleadoActualizado.getDni());
             empleadoExistente.setRol(empleadoActualizado.getRol());
             empleadoExistente.setEspecialidad(empleadoActualizado.getEspecialidad());
+            // Nota: Si en el futuro permites actualizar la contraseña desde aquí,
+            // recuerda que también deberás encriptarla antes de guardarla.
 
             return empleadoRepository.save(empleadoExistente);
         });
@@ -50,7 +57,14 @@ public class ServicioPersonal {
     }
 
     public Optional<Empleado> login(LoginDTO loginDTO){
-        return empleadoRepository.findByDniAndContraseña(loginDTO.getDni(), loginDTO.getContraseña());
+        // 1. Buscamos solo por DNI en lugar de DNI y contraseña
+        Optional<Empleado> empleadoOpt = empleadoRepository.findByDni(loginDTO.getDni());
+
+        // 2. Si existe, comparamos la contraseña plana (ingresada) con el Hash de la BD
+        if (empleadoOpt.isPresent() && passwordEncoder.matches(loginDTO.getContraseña(), empleadoOpt.get().getContraseña())) {
+            return empleadoOpt;
+        }
+        return Optional.empty(); // Credenciales incorrectas
     }
 
     public Optional<Empleado> buscarEmpleadoPorId(Long id) {
