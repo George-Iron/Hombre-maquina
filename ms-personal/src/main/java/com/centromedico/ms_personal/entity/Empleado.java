@@ -13,18 +13,17 @@ public class Empleado {
     private String nombre;
     private String apellido;
 
-    @Column(unique = true, nullable = false)//el dni debe ser unico
+    @Column(unique = true, nullable = false)
     private String dni;
 
-    //datos de autentificacion
     @Column(nullable = false)
     private String contraseña;
 
     private boolean isEnable = true;
 
-    @Enumerated(EnumType.STRING) //guarda el rol como texto
+    @Enumerated(EnumType.STRING)
     private Rol rol;
 
-    private String especialidad; //aplica si el rol es doctor
+    private String especialidad;
 
 }

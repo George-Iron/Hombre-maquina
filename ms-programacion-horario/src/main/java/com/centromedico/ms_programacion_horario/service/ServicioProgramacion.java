@@ -21,7 +21,6 @@ public class ServicioProgramacion {
     @Autowired
     private PersonalClient personalClient;
 
-    // --- GESTIÓN DE CONSULTORIOS ---
     public Consultorio registrarConsultorio(Consultorio consultorio) {
         return consultorioRepository.save(consultorio);
     }
@@ -30,7 +29,6 @@ public class ServicioProgramacion {
         return consultorioRepository.findAll();
     }
 
-    // --- GESTIÓN DE HORARIOS ---
 
     public ProgramacionHorario registrarHorario(ProgramacionHorario horario) {
         // 1. Validar Médico
@@ -39,7 +37,6 @@ public class ServicioProgramacion {
             throw new RuntimeException("El empleado no es un médico válido.");
         }
 
-        // Llenar datos redundantes (Snapshot)
         horario.setNombreMedico(medico.getNombre() + " " + medico.getApellido());
         horario.setEspecialidadMedico(medico.getEspecialidad());
 
@@ -48,7 +45,6 @@ public class ServicioProgramacion {
                 .orElseThrow(() -> new RuntimeException("Consultorio no encontrado"));
         horario.setConsultorio(cons);
 
-        // 3. VALIDACIÓN CRÍTICA DE CRUCES (REGLA DE NEGOCIO)
         if (programacionRepository.existsByIdMedicoAndFechaAndHoraInicio(
                 horario.getIdMedico(), horario.getFecha(), horario.getHoraInicio())) {
             throw new RuntimeException("El médico ya tiene un turno asignado a esta hora.");
@@ -59,7 +55,7 @@ public class ServicioProgramacion {
             throw new RuntimeException("El consultorio está ocupado a esta hora.");
         }
 
-        // 4. Asignar hora fin automática (ej. 30 min) si no viene
+        // Asignar hora fin
         if (horario.getHoraFin() == null) {
             horario.setHoraFin(horario.getHoraInicio().plusMinutes(30));
         }
@@ -86,12 +82,10 @@ public class ServicioProgramacion {
         programacionRepository.save(horario);
     }
 
-    // CRUD: Actualizar datos del horario (Fecha/Hora)
     public ProgramacionHorario actualizarHorario(Long id, ProgramacionHorario datos) {
         ProgramacionHorario actual = buscarHorarioPorId(id);
         actual.setFecha(datos.getFecha());
         actual.setHoraInicio(datos.getHoraInicio());
-        // Nota: Si cambias fecha/hora deberías volver a validar cruces aquí
         return programacionRepository.save(actual);
     }
 

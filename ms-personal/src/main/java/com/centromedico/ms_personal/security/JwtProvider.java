@@ -16,28 +16,25 @@ import java.util.Map;
 @Component
 public class JwtProvider {
 
-    // Inyectamos la llave secreta desde el application.properties o application.yml
     @Value("${jwt.secret}")
     private String secret;
 
     public String createToken(Empleado empleado) {
         Map<String, Object> claims = new HashMap<>();
-        // Aquí guardamos datos útiles dentro del token
         claims.put("id", empleado.getIdEmpleado());
         claims.put("rol", empleado.getRol());
         claims.put("nombre", empleado.getNombre() + " " + empleado.getApellido());
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(empleado.getDni()) // El DNI será el identificador principal
+                .setSubject(empleado.getDni())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 Horas de vida
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
                 .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     private Key getSignKey() {
-        // Usamos la variable inyectada 'secret' en lugar de la constante 'SECRET'
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }

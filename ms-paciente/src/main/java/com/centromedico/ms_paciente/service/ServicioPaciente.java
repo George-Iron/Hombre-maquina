@@ -26,7 +26,6 @@ public class ServicioPaciente {
         return pacienteRepository.findAll();
     }
 
-    // --- NUEVO: ACTUALIZAR ---
     public Paciente actualizar(Long id, Paciente nuevosDatos) {
         return pacienteRepository.findById(id).map(p -> {
             p.setNombre(nuevosDatos.getNombre());
@@ -37,7 +36,6 @@ public class ServicioPaciente {
         }).orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
     }
 
-    // --- NUEVO: ELIMINAR ---
     public void eliminar(Long id) {
         if (pacienteRepository.existsById(id)) {
             pacienteRepository.deleteById(id);

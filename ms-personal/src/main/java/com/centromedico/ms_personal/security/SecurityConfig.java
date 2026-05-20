@@ -13,13 +13,11 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 1. Declaramos BCrypt como nuestro encriptador oficial
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // 2. Desactivamos la seguridad de rutas aquí, porque el API Gateway ya hace ese trabajo
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http

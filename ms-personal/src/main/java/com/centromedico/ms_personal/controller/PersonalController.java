@@ -44,6 +44,11 @@ public class PersonalController implements ApiPersonal {
     }
 
     @Override
+    public ResponseEntity<List<Empleado>> listarTodos(){
+        return ResponseEntity.ok(servicioPersonal.listarTodos());
+    }
+
+    @Override
     public ResponseEntity<Empleado> actualizarEmpleado(@PathVariable Long id, @RequestBody Empleado empleado){
         return servicioPersonal.actualizarEmpleado(id, empleado)
                 .map(ResponseEntity::ok)
@@ -59,7 +64,6 @@ public class PersonalController implements ApiPersonal {
         }
     }
 
-    // --- AQUI ESTÁ EL CAMBIO PRINCIPAL ---
     @Override
     public ResponseEntity<Object> login(@RequestBody LoginDTO loginDTO) {
         // 1. Validar usuario y contraseña en la base de datos
@@ -74,7 +78,6 @@ public class PersonalController implements ApiPersonal {
             // 3. Devolver el token en un objeto JSON
             return ResponseEntity.ok(new TokenDTO(token));
         } else {
-            // 4. Si falla, devolver error 401
             return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
     }
