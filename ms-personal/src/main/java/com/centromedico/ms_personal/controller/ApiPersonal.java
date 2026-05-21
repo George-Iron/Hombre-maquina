@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface ApiPersonal {
 
-    @GetMapping("listar/{rol}")
-    ResponseEntity<List<Empleado>> listarPorRol(@PathVariable Rol rol);
     @GetMapping("/listar")
     ResponseEntity<List<Empleado>> listarPersonal();
 

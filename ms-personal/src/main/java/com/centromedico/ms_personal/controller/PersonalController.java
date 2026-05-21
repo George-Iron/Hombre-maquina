@@ -48,11 +48,6 @@ public class PersonalController implements ApiPersonal {
     }
 
     @Override
-    public ResponseEntity<List<Empleado>> listarTodos(){
-        return ResponseEntity.ok(servicioPersonal.listarTodos());
-    }
-
-    @Override
     public ResponseEntity<Empleado> actualizarEmpleado(@PathVariable Long id, @RequestBody Empleado empleado){
         return servicioPersonal.actualizarEmpleado(id, empleado)
                 .map(ResponseEntity::ok)
