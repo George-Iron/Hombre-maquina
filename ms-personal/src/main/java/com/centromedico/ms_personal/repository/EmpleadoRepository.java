@@ -12,7 +12,4 @@ public interface EmpleadoRepository extends JpaRepository<Empleado, Long> {
     Optional<Empleado> findByDni(String dni);
     List<Empleado> findByRol(Rol rol);
 
-    //para mi login
-    //Optional<Empleado> findByDniAndContraseña(String dni, String contraseña);
-
 }

@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    // 1. Declaramos BCrypt como nuestro encriptador oficial
     @Bean
     public PasswordEncoder passwordEncoder() {return new BCryptPasswordEncoder();}
 

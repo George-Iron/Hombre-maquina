@@ -22,13 +22,14 @@ public interface ApiPersonal {
 
     @PostMapping("/registrar")
     ResponseEntity<Empleado> registrarEmpleado(@RequestBody Empleado empleado);
+    @GetMapping("listar/{rol}")
+    ResponseEntity<List<Empleado>> listarPorRol(@PathVariable Rol rol);
+
     @PutMapping("/actualizar/{id}")
     ResponseEntity<Empleado> actualizarEmpleado(@PathVariable Long id, @RequestBody Empleado empleado);
     @DeleteMapping("/eliminar/{id}")
     ResponseEntity<Void> eliminarEmpleado(@PathVariable Long id);
 
-    // Antes tenías: ResponseEntity<Empleado>
-    // Debes cambiarlo a: ResponseEntity<Object>
     @PostMapping("/login")
     ResponseEntity<Object> login(@RequestBody LoginDTO loginDTO);
 

@@ -36,6 +36,10 @@ public class ServicioPersonal {
         return empleadoRepository.findAll();
     }
 
+    public List<Empleado> listarTodos(){
+        return empleadoRepository.findAll();
+    }
+
     public Optional<Empleado> actualizarEmpleado(Long id, Empleado empleadoActualizado){
         return empleadoRepository.findById(id).map(empleadoExistente -> {
             empleadoExistente.setNombre(empleadoActualizado.getNombre());
@@ -56,10 +60,8 @@ public class ServicioPersonal {
     }
 
     public Optional<Empleado> login(LoginDTO loginDTO){
-        // 1. Buscamos solo por DNI en lugar de DNI y contraseña
         Optional<Empleado> empleadoOpt = empleadoRepository.findByDni(loginDTO.getDni());
 
-        // 2. Si existe, comparamos la contraseña plana (ingresada) con el Hash de la BD
         if (empleadoOpt.isPresent() && passwordEncoder.matches(loginDTO.getContraseña(), empleadoOpt.get().getContraseña())) {
             return empleadoOpt;
         }

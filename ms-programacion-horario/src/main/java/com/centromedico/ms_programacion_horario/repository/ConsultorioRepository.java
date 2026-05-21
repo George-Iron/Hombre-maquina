@@ -9,7 +9,4 @@ import java.util.List;
 @Repository
 public interface ConsultorioRepository extends JpaRepository<Consultorio, Long> {
 
-    //List<Consultorio> findByIdMedico(Long idConsultorio);
-    //List<Consultorio> findByDisponibleTrue();
-
 }
