@@ -15,17 +15,15 @@ public class SecurityConfig {
 
     // 1. Declaramos BCrypt como nuestro encriptador oficial
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    public PasswordEncoder passwordEncoder() {return new BCryptPasswordEncoder();}
 
     // 2. Desactivamos la seguridad de rutas aquí, porque el API Gateway ya hace ese trabajo
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
-        return http.build();
-    }
+    //@Bean
+    //public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    //    http
+    //           .csrf(AbstractHttpConfigurer::disable)
+    //            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+    //            .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
+    //    return http.build();
+    //}
 }

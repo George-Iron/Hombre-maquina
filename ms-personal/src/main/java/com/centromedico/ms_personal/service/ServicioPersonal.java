@@ -18,10 +18,9 @@ public class ServicioPersonal {
     private EmpleadoRepository empleadoRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder; // Inyectamos el Bean de Spring Security
+    private PasswordEncoder passwordEncoder;
 
     public Empleado crearEmpleado(Empleado empleado){
-        // Encriptamos la contraseña antes de guardar en la base de datos
         empleado.setContraseña(passwordEncoder.encode(empleado.getContraseña()));
         return empleadoRepository.save(empleado);
     }
@@ -33,6 +32,9 @@ public class ServicioPersonal {
     public List<Empleado> listarPorRol(Rol rol){
         return empleadoRepository.findByRol(rol);
     }
+    public List<Empleado> listar( ){
+        return empleadoRepository.findAll();
+    }
 
     public Optional<Empleado> actualizarEmpleado(Long id, Empleado empleadoActualizado){
         return empleadoRepository.findById(id).map(empleadoExistente -> {
@@ -40,10 +42,7 @@ public class ServicioPersonal {
             empleadoExistente.setApellido(empleadoActualizado.getApellido());
             empleadoExistente.setDni(empleadoActualizado.getDni());
             empleadoExistente.setRol(empleadoActualizado.getRol());
-            empleadoExistente.setEspecialidad(empleadoActualizado.getEspecialidad());
-            // Nota: Si en el futuro permites actualizar la contraseña desde aquí,
-            // recuerda que también deberás encriptarla antes de guardarla.
-
+            empleadoExistente.setCorreo(empleadoActualizado.getCorreo());
             return empleadoRepository.save(empleadoExistente);
         });
     }

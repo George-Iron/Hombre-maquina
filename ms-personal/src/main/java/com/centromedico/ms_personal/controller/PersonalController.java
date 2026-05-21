@@ -1,5 +1,4 @@
 package com.centromedico.ms_personal.controller;
-
 import com.centromedico.ms_personal.dto.LoginDTO;
 import com.centromedico.ms_personal.dto.TokenDTO;
 import com.centromedico.ms_personal.entity.Empleado;
@@ -12,7 +11,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -27,9 +25,9 @@ public class PersonalController implements ApiPersonal {
     private JwtProvider jwtProvider;
 
     @Override
-    public ResponseEntity<Empleado> registrarEmpleado(@RequestBody Empleado empleado){
-        return ResponseEntity.ok(servicioPersonal.crearEmpleado(empleado));
-    }
+    public ResponseEntity<List<Empleado>> listarPersonal(){return ResponseEntity.ok(servicioPersonal.listar());}
+    @Override
+    public ResponseEntity<List<Empleado>> listarPorRol(@PathVariable Rol rol){return ResponseEntity.ok(servicioPersonal.listarPorRol(rol));}
 
     @Override
     public ResponseEntity<Empleado> buscarEmpleado(@PathVariable String dni){
@@ -37,10 +35,16 @@ public class PersonalController implements ApiPersonal {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    @Override
+    public ResponseEntity<Empleado> buscarEmpleadoPorId(@PathVariable Long id) {
+        return servicioPersonal.buscarEmpleadoPorId(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
 
     @Override
-    public ResponseEntity<List<Empleado>> listarPorRol(@PathVariable Rol rol){
-        return ResponseEntity.ok(servicioPersonal.listarPorRol(rol));
+    public ResponseEntity<Empleado> registrarEmpleado(@RequestBody Empleado empleado){
+        return ResponseEntity.ok(servicioPersonal.crearEmpleado(empleado));
     }
 
     @Override
@@ -59,7 +63,6 @@ public class PersonalController implements ApiPersonal {
         }
     }
 
-    // --- AQUI ESTÁ EL CAMBIO PRINCIPAL ---
     @Override
     public ResponseEntity<Object> login(@RequestBody LoginDTO loginDTO) {
         // 1. Validar usuario y contraseña en la base de datos
@@ -78,12 +81,4 @@ public class PersonalController implements ApiPersonal {
             return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
     }
-
-    @Override
-    public ResponseEntity<Empleado> buscarEmpleadoPorId(@PathVariable Long id) {
-        return servicioPersonal.buscarEmpleadoPorId(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
 }

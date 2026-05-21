@@ -15,4 +15,24 @@ public class Consultorio {
     private Long idConsultorio;
     private String nombre;
 
+    public Consultorio(Long idConsultorio, String nombre) {
+        this.idConsultorio = idConsultorio;
+        this.nombre = nombre;
+    }
+
+    public Long getIdConsultorio() {
+        return idConsultorio;
+    }
+
+    public void setIdConsultorio(Long idConsultorio) {
+        this.idConsultorio = idConsultorio;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
 }

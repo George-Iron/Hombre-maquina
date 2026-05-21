@@ -1,10 +1,8 @@
 package com.centromedico.ms_personal.repository;
-
 import com.centromedico.ms_personal.entity.Empleado;
 import com.centromedico.ms_personal.entity.Rol;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
 import java.util.List;
 import java.util.Optional;
 
