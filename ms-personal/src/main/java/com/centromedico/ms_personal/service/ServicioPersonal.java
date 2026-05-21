@@ -32,6 +32,9 @@ public class ServicioPersonal {
     public List<Empleado> listarPorRol(Rol rol){
         return empleadoRepository.findByRol(rol);
     }
+    public List<Empleado> listar( ){
+        return empleadoRepository.findAll();
+    }
 
     public List<Empleado> listarTodos(){
         return empleadoRepository.findAll();
@@ -43,8 +46,7 @@ public class ServicioPersonal {
             empleadoExistente.setApellido(empleadoActualizado.getApellido());
             empleadoExistente.setDni(empleadoActualizado.getDni());
             empleadoExistente.setRol(empleadoActualizado.getRol());
-            empleadoExistente.setEspecialidad(empleadoActualizado.getEspecialidad());
-
+            empleadoExistente.setCorreo(empleadoActualizado.getCorreo());
             return empleadoRepository.save(empleadoExistente);
         });
     }

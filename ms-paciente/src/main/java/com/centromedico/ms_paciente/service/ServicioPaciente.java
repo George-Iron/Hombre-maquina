@@ -1,10 +1,8 @@
 package com.centromedico.ms_paciente.service;
-
 import com.centromedico.ms_paciente.entity.Paciente;
 import com.centromedico.ms_paciente.repository.PacienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -14,21 +12,24 @@ public class ServicioPaciente {
     @Autowired
     private PacienteRepository pacienteRepository;
 
-    public Paciente registrar(Paciente paciente){
-        return pacienteRepository.save(paciente);
+    public List<Paciente> listar(){
+        return pacienteRepository.findAll();
     }
-
     public Optional<Paciente> buscarPorDni(String dni){
         return pacienteRepository.findByDocumento(dni);
     }
+    public Optional<Paciente> buscarPorId(Long id){
+        return pacienteRepository.findById(id);
+    }
 
-    public List<Paciente> listar(){
-        return pacienteRepository.findAll();
+    public Paciente registrar(Paciente paciente){
+        return pacienteRepository.save(paciente);
     }
 
     public Paciente actualizar(Long id, Paciente nuevosDatos) {
         return pacienteRepository.findById(id).map(p -> {
             p.setNombre(nuevosDatos.getNombre());
+            p.setApellido(nuevosDatos.getApellido());
             p.setDocumento(nuevosDatos.getDocumento());
             p.setTelefono(nuevosDatos.getTelefono());
             p.setFechaNac(nuevosDatos.getFechaNac());
@@ -43,9 +44,4 @@ public class ServicioPaciente {
             throw new RuntimeException("No se puede eliminar: Paciente no existe");
         }
     }
-
-    public Optional<Paciente> buscarPorId(Long id){
-        return pacienteRepository.findById(id);
-    }
-
 }
