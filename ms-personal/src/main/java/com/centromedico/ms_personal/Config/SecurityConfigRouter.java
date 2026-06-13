@@ -1,4 +1,4 @@
-package com.centromedico.ms_personal.Config;
+package com.centromedico.ms_personal.config;
 
 
 import org.springframework.context.annotation.Bean;
