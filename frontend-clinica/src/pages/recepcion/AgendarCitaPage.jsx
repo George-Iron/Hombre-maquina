@@ -87,7 +87,7 @@ const AgendarCitaPage = () => {
 
     return (
         <Container className="mt-4">
-            <h2 className="text-secondary mb-4"><FaCalendarCheck/> Gestión de Citas</h2>
+            <h2 className="text-secondary mb-4"><FaCalendarCheck title="Icono Calendario"/> Gestión de Citas</h2>
             
             <Row>
                 {/* --- COLUMNA IZQUIERDA: PACIENTE --- */}
@@ -103,9 +103,10 @@ const AgendarCitaPage = () => {
                                     value={dniBusqueda} 
                                     onChange={e => setDniBusqueda(e.target.value)}
                                     onKeyPress={e => e.key === 'Enter' && buscarPaciente()}
+                                    aria-label="Ingresar DNI del Paciente para buscar"
                                 />
-                                <Button variant="outline-primary" onClick={buscarPaciente}>
-                                    <FaSearch/>
+                                <Button variant="outline-primary" onClick={buscarPaciente} aria-label="Buscar paciente por DNI">
+                                    <FaSearch title="Icono Buscar"/>
                                 </Button>
                             </div>
 
@@ -140,14 +141,14 @@ const AgendarCitaPage = () => {
                         </Card.Header>
                         <Card.Body>
                             <div className="d-flex gap-3 align-items-center mb-4 bg-light p-3 rounded">
-                                <Form.Select value={especialidad} onChange={e => setEspecialidad(e.target.value)}>
+                                <Form.Select value={especialidad} onChange={e => setEspecialidad(e.target.value)} aria-label="Filtrar por especialidad médica">
                                     <option value="">Filtrar por Especialidad...</option>
                                     <option value="Cardiologia">Cardiología</option>
                                     <option value="Pediatria">Pediatría</option>
                                     <option value="General">Medicina General</option>
                                     <option value="Dermatologia">Dermatología</option>
                                 </Form.Select>
-                                <Button onClick={buscarHorarios} variant="dark">Buscar Disponibles</Button>
+                                <Button onClick={buscarHorarios} variant="dark" aria-label="Buscar horarios de turnos disponibles">Buscar Disponibles</Button>
                             </div>
 
                             <Table hover responsive className="align-middle">
@@ -170,7 +171,8 @@ const AgendarCitaPage = () => {
                                             <td>
                                                 <Button size="sm" variant="success" 
                                                     disabled={!pacienteEncontrado}
-                                                    onClick={() => handleAgendar(h.idProgramacion)}>
+                                                    onClick={() => handleAgendar(h.idProgramacion)}
+                                                    aria-label={`Reservar Cita con Dr. ${h.nombreMedico}`}>
                                                     Reservar Cita
                                                 </Button>
                                             </td>
@@ -187,7 +189,7 @@ const AgendarCitaPage = () => {
             {/* --- MODAL REGISTRO RÁPIDO --- */}
             <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static">
                 <Modal.Header closeButton className="bg-success text-white">
-                    <Modal.Title><FaUserPlus/> Nuevo Paciente</Modal.Title>
+                    <Modal.Title><FaUserPlus title="Icono Registrar Usuario"/> Nuevo Paciente</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleRegistrarPaciente}>
@@ -198,6 +200,7 @@ const AgendarCitaPage = () => {
                                     <Form.Control required 
                                         value={formPaciente.documento} 
                                         onChange={e => setFormPaciente({...formPaciente, documento: e.target.value})} 
+                                        aria-label="Ingresar DNI o Documento de Identidad del nuevo paciente"
                                     />
                                 </Form.Group>
                             </Col>
@@ -207,6 +210,7 @@ const AgendarCitaPage = () => {
                                     <Form.Control type="date" required 
                                         value={formPaciente.fechaNac} 
                                         onChange={e => setFormPaciente({...formPaciente, fechaNac: e.target.value})} 
+                                        aria-label="Ingresar fecha de nacimiento del nuevo paciente"
                                     />
                                 </Form.Group>
                             </Col>
@@ -217,6 +221,7 @@ const AgendarCitaPage = () => {
                             <Form.Control placeholder="Ej: Juan Perez" required 
                                 value={formPaciente.nombre} 
                                 onChange={e => setFormPaciente({...formPaciente, nombre: e.target.value})} 
+                                aria-label="Ingresar nombre completo del nuevo paciente"
                             />
                         </Form.Group>
 
@@ -225,12 +230,13 @@ const AgendarCitaPage = () => {
                             <Form.Control placeholder="999..." required 
                                 value={formPaciente.telefono} 
                                 onChange={e => setFormPaciente({...formPaciente, telefono: e.target.value})} 
+                                aria-label="Ingresar teléfono del nuevo paciente"
                             />
                         </Form.Group>
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
-                            <Button type="submit" variant="success">Guardar y Seleccionar</Button>
+                            <Button variant="secondary" onClick={() => setShowModal(false)} aria-label="Cerrar registro de paciente">Cancelar</Button>
+                            <Button type="submit" variant="success" aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
                         </div>
                     </Form>
                 </Modal.Body>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
-import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Accordion, Spinner, Table } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Accordion, Spinner, Table, Modal } from 'react-bootstrap';
 import { FaHistory, FaUserInjured, FaFilePrescription, FaVials } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 
@@ -18,6 +18,7 @@ const AtencionMedica = () => {
 
     // --- ESTADOS ---
     const [loading, setLoading] = useState(true);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [paciente, setPaciente] = useState(null);
     const [historia, setHistoria] = useState(null); // Peso, talla
     const [historialAtenciones, setHistorialAtenciones] = useState([]); // consultas pasadas
@@ -99,8 +100,13 @@ const AtencionMedica = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleShowConfirm = (e) => {
         e.preventDefault();
+        setShowConfirmModal(true);
+    };
+
+    const handleConfirmSubmit = async () => {
+        setShowConfirmModal(false);
         const payload = {
             idCita: idCita,
             diagnostico, tratamiento, observaciones,
@@ -125,7 +131,7 @@ const AtencionMedica = () => {
             <Card className="mb-4 border-0 shadow-sm bg-primary text-white">
                 <Card.Body className="d-flex justify-content-between align-items-center">
                     <div>
-                        <h2 className="mb-0"><FaUserInjured className="me-2" /> {paciente?.nombre}</h2>
+                        <h2 className="mb-0"><FaUserInjured className="me-2" title="Icono Paciente" /> {paciente?.nombre}</h2>
                         <small>DNI: {paciente?.documento} | Tel: {paciente?.telefono} | Edad: {calcularEdad(paciente?.fechaNac)}{calcularEdad(paciente?.fechaNac) !== 'N/A' ? ' años' : ''}</small>
                     </div>
                     <div className="text-end">
@@ -140,7 +146,7 @@ const AtencionMedica = () => {
                 <Col lg={4}>
                     <Card className="shadow-sm h-100">
                         <Card.Header className="bg-white border-bottom">
-                            <h5 className="mb-0 text-secondary"><FaHistory className="me-2" /> Historial Médico</h5>
+                            <h5 className="mb-0 text-secondary"><FaHistory className="me-2" title="Icono Historial" /> Historial Médico</h5>
                         </Card.Header>
                         <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
                             {historialAtenciones.length === 0 ? (
@@ -164,7 +170,7 @@ const AtencionMedica = () => {
 
                                                 {at.receta && at.receta.length > 0 && (
                                                     <div className="bg-light p-2 rounded">
-                                                        <strong className="text-success"><FaFilePrescription /> Receta:</strong>
+                                                        <strong className="text-success"><FaFilePrescription title="Icono Receta" /> Receta:</strong>
                                                         <ul className="mb-0 ps-3 small">
                                                             {at.receta.map((r, i) => (
                                                                 <li key={i}>{r.nombreMedicamento} ({r.dosis})</li>
@@ -188,18 +194,18 @@ const AtencionMedica = () => {
                             <h5 className="mb-0 text-primary">Nueva Consulta (Cita #{idCita})</h5>
                         </Card.Header>
                         <Card.Body>
-                            <Form onSubmit={handleSubmit}>
+                            <Form onSubmit={handleShowConfirm}>
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Diagnóstico</Form.Label>
-                                            <Form.Control as="textarea" rows={3} required value={diagnostico} onChange={e => setDiagnostico(e.target.value)} />
+                                            <Form.Control as="textarea" rows={3} required value={diagnostico} onChange={e => setDiagnostico(e.target.value)} aria-label="Ingresar Diagnóstico Médico" />
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Tratamiento</Form.Label>
-                                            <Form.Control as="textarea" rows={3} required value={tratamiento} onChange={e => setTratamiento(e.target.value)} />
+                                            <Form.Control as="textarea" rows={3} required value={tratamiento} onChange={e => setTratamiento(e.target.value)} aria-label="Ingresar Tratamiento Médico" />
                                         </Form.Group>
                                     </Col>
                                     <Col md={12}>
@@ -210,6 +216,7 @@ const AtencionMedica = () => {
                                                 rows={2}
                                                 value={observaciones}
                                                 onChange={e => setObservaciones(e.target.value)}
+                                                aria-label="Ingresar Observaciones Adicionales"
                                             />
                                         </Form.Group>
                                     </Col>
@@ -217,21 +224,21 @@ const AtencionMedica = () => {
 
                                 <hr className="my-4" />
 
-                                <h6 className="text-success"><FaFilePrescription className="me-2" /> Receta Médica</h6>
+                                <h6 className="text-success"><FaFilePrescription className="me-2" title="Icono Receta" /> Receta Médica</h6>
                                 <Row className="align-items-end mb-3">
                                     <Col md={5}>
                                         <Form.Label>Medicamento</Form.Label>
-                                        <Form.Select value={medSeleccionado} onChange={e => setMedSeleccionado(e.target.value)}>
+                                        <Form.Select value={medSeleccionado} onChange={e => setMedSeleccionado(e.target.value)} aria-label="Seleccionar Medicamento para Receta">
                                             <option value="">Buscar...</option>
                                             {medicamentos.map(m => <option key={m.idMedicamento} value={m.idMedicamento}>{m.nombre}</option>)}
                                         </Form.Select>
                                     </Col>
                                     <Col md={5}>
                                         <Form.Label>Dosis</Form.Label>
-                                        <Form.Control placeholder="Ej: 1 c/8h" value={dosis} onChange={e => setDosis(e.target.value)} />
+                                        <Form.Control placeholder="Ej: 1 c/8h" value={dosis} onChange={e => setDosis(e.target.value)} aria-label="Ingresar Dosis del Medicamento" />
                                     </Col>
                                     <Col md={2}>
-                                        <Button variant="outline-success" className="w-100" onClick={agregarMedicamento}>Agregar</Button>
+                                        <Button variant="outline-success" className="w-100" onClick={agregarMedicamento} aria-label="Agregar Medicamento a la Receta">Agregar</Button>
                                     </Col>
                                 </Row>
 
@@ -248,21 +255,21 @@ const AtencionMedica = () => {
 
                                 <hr className="my-4" />
 
-                                <h6 className="text-info"><FaVials className="me-2" /> Análisis de Laboratorio</h6>
+                                <h6 className="text-info"><FaVials className="me-2" title="Icono Tubos de Ensayo" /> Análisis de Laboratorio</h6>
                                 <Row className="align-items-end mb-3">
                                     <Col md={5}>
                                         <Form.Label>Análisis</Form.Label>
-                                        <Form.Select value={anaSeleccionado} onChange={e => setAnaSeleccionado(e.target.value)}>
+                                        <Form.Select value={anaSeleccionado} onChange={e => setAnaSeleccionado(e.target.value)} aria-label="Seleccionar Análisis de Laboratorio">
                                             <option value="">Buscar...</option>
                                             {analisis.map(a => <option key={a.idTipoAnalisis} value={a.idTipoAnalisis}>{a.nombre}</option>)}
                                         </Form.Select>
                                     </Col>
                                     <Col md={5}>
                                         <Form.Label>Indicaciones</Form.Label>
-                                        <Form.Control placeholder="Ej: En ayunas" value={indicaciones} onChange={e => setIndicaciones(e.target.value)} />
+                                        <Form.Control placeholder="Ej: En ayunas" value={indicaciones} onChange={e => setIndicaciones(e.target.value)} aria-label="Ingresar Indicaciones para el Análisis" />
                                     </Col>
                                     <Col md={2}>
-                                        <Button variant="outline-info" className="w-100" onClick={agregarAnalisis}>Agregar</Button>
+                                        <Button variant="outline-info" className="w-100" onClick={agregarAnalisis} aria-label="Agregar Análisis de Laboratorio a las Órdenes">Agregar</Button>
                                     </Col>
                                 </Row>
 
@@ -278,14 +285,32 @@ const AtencionMedica = () => {
                                 )}
 
                                 <div className="text-end mt-4">
-                                    <Button variant="secondary" className="me-2" onClick={() => navigate('/medico/agenda')}>Cancelar</Button>
-                                    <Button variant="primary" size="lg" type="submit">Finalizar y Guardar Historia</Button>
+                                    <Button variant="secondary" className="me-2" onClick={() => navigate('/medico/agenda')} aria-label="Cancelar y volver a la agenda">Cancelar</Button>
+                                    <Button variant="primary" size="lg" type="submit" aria-label="Confirmar Finalizar y Guardar Historia Clínica">Finalizar y Guardar Historia</Button>
                                 </div>
                             </Form>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
+
+            {/* Modal de Confirmación para Finalizar Atención */}
+            <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+                <Modal.Header closeButton>
+                    <Modal.Title>Confirmar Acción Crítica</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    ¿Está seguro de procesar esta acción crítica? Los datos se guardarán permanentemente en el sistema.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowConfirmModal(false)} aria-label="Cerrar modal de confirmación">
+                        Cancelar
+                    </Button>
+                    <Button variant="danger" onClick={handleConfirmSubmit} aria-label="Confirmar guardar historia clínica">
+                        Confirmar
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };

@@ -1,5 +1,5 @@
+import { useState, useEffect, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
 import { AuthContext } from '../context/AuthProvider';
 import { 
     FaUserMd, 
@@ -11,13 +11,31 @@ import {
     FaUserCog,
     FaMoneyBillWave,
     FaCalendarCheck,
-    FaUserNurse 
+    FaUserNurse,
+    FaBars,
+    FaTimes
 } from 'react-icons/fa';
 
 const Layout = () => {
     const { user, logout } = useContext(AuthContext);
     const location = useLocation();
     const navigate = useNavigate();
+
+    const [theme, setTheme] = useState(() => {
+        const stored = localStorage.getItem('theme');
+        return stored === 'dark' ? 'dark' : 'light';
+    });
+    const [showSidebar, setShowSidebar] = useState(false);
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    useEffect(() => {
+        setShowSidebar(false);
+    }, [location.pathname]);
 
     const handleLogout = () => {
         logout();
@@ -30,9 +48,69 @@ const Layout = () => {
     return (
         <div className="dashboard-layout">
             
-            <aside className="sidebar">
-                <div className="sidebar-logo">
-                    🏥 Clínica George
+            {/* Header móvil superior con hamburguesa */}
+            <header className="mobile-header d-md-none d-flex align-items-center justify-content-between p-3 bg-dark text-white border-bottom border-secondary w-100">
+                <span className="fw-bold">🏥 Clínica George</span>
+                <button 
+                    type="button" 
+                    className="btn btn-outline-light border-0 p-1" 
+                    onClick={() => setShowSidebar(!showSidebar)}
+                    aria-label="Alternar menú de navegación"
+                    title="Alternar Menú"
+                >
+                    {showSidebar ? <FaTimes size={22} /> : <FaBars size={22} />}
+                </button>
+            </header>
+
+            <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
+                <div className="sidebar-logo d-flex justify-content-between align-items-center">
+                    <span>🏥 Clínica George</span>
+                    <button 
+                        type="button"
+                        className="btn btn-sm text-white d-md-none border-0 p-1"
+                        onClick={() => setShowSidebar(false)}
+                        aria-label="Cerrar menú de navegación"
+                        title="Cerrar Menú"
+                    >
+                        <FaTimes size={20} />
+                    </button>
+                </div>
+                
+                {/* Day/Night Theme Toggle Switch */}
+                <div className="d-flex justify-content-center mb-4">
+                    <div 
+                        className={`theme-toggle-switch ${theme === 'dark' ? 'dark-mode' : ''}`}
+                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                        title={theme === 'light' ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+                        aria-label="Alternar tema de la aplicación"
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => { 
+                            if (e.key === 'Enter' || e.key === ' ') { 
+                                e.preventDefault();
+                                setTheme(theme === 'light' ? 'dark' : 'light'); 
+                            } 
+                        }}
+                    >
+                        <div className="toggle-track">
+                            {/* Nubes for Light Mode */}
+                            <div className="toggle-clouds">
+                                <div className="cloud cloud-1"></div>
+                                <div className="cloud cloud-2"></div>
+                            </div>
+                            
+                            {/* Luna Creciente and Stars for Dark Mode */}
+                            <div className="toggle-night-sky">
+                                <div className="crescent-moon"></div>
+                                <div className="star star-1">✦</div>
+                                <div className="star star-2">✦</div>
+                                <div className="star star-3">✦</div>
+                            </div>
+                            
+                            {/* White circle (Sun / Moon) */}
+                            <div className="toggle-knob"></div>
+                        </div>
+                    </div>
                 </div>
                 
                 <nav className="d-flex flex-column flex-grow-1">
@@ -118,6 +196,23 @@ const Layout = () => {
                     </button>
                 </div>
             </aside>
+
+            {/* Backdrop para cerrar sidebar al hacer clic fuera en pantallas móviles */}
+            {showSidebar && (
+                <div 
+                    className="sidebar-backdrop d-md-none" 
+                    onClick={() => setShowSidebar(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 998
+                    }}
+                />
+            )}
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="main-content">

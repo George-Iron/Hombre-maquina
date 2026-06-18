@@ -80,20 +80,24 @@ const GestionProgramacion = () => {
     const renderEstadoBadge = (estado) => {
         let bg = '#f3f4f6';
         let color = '#374151';
+        let badgeClass = "badge rounded-pill px-3 py-2 fw-semibold";
         
         if (estado === 'LIBRE') {
+            badgeClass += " badge-libre";
             bg = '#def7ec';
             color = '#03543f';
         } else if (estado === 'PENDIENTE') {
+            badgeClass += " badge-pendiente";
             bg = '#fef3c7';
             color = '#92400e';
         } else if (estado === 'OCUPADO') {
+            badgeClass += " badge-ocupado";
             bg = '#e1effe';
             color = '#1e429f';
         }
         
         return (
-            <span className="badge rounded-pill px-3 py-2 fw-semibold" style={{ backgroundColor: bg, color: color, fontSize: '0.85rem' }}>
+            <span className={badgeClass} style={{ backgroundColor: bg, color: color, fontSize: '0.85rem' }}>
                 {estado}
             </span>
         );
@@ -115,7 +119,7 @@ const GestionProgramacion = () => {
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Médico</Form.Label>
-                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idMedico: e.target.value})} value={formHorario.idMedico}>
+                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idMedico: e.target.value})} value={formHorario.idMedico} aria-label="Seleccionar médico para el turno">
                                                 <option value="">Seleccione Doctor...</option>
                                                 {doctores.map(d => (
                                                     <option key={d.idEmpleado} value={d.idEmpleado}>{d.nombre} {d.apellido} ({d.especialidad})</option>
@@ -126,7 +130,7 @@ const GestionProgramacion = () => {
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Consultorio</Form.Label>
-                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idConsultorio: e.target.value})} value={formHorario.idConsultorio}>
+                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idConsultorio: e.target.value})} value={formHorario.idConsultorio} aria-label="Seleccionar consultorio para el turno">
                                                 <option value="">Seleccione Consultorio...</option>
                                                 {consultorios.map(c => (
                                                     <option key={c.idConsultorio} value={c.idConsultorio}>{c.nombre}</option>
@@ -137,18 +141,18 @@ const GestionProgramacion = () => {
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Fecha</Form.Label>
-                                            <Form.Control type="date" required onChange={e => setFormHorario({...formHorario, fecha: e.target.value})} value={formHorario.fecha} />
+                                            <Form.Control type="date" required onChange={e => setFormHorario({...formHorario, fecha: e.target.value})} value={formHorario.fecha} aria-label="Seleccionar fecha del turno" />
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Hora Inicio</Form.Label>
-                                            <Form.Control type="time" required onChange={e => setFormHorario({...formHorario, horaInicio: e.target.value})} value={formHorario.horaInicio} />
+                                            <Form.Control type="time" required onChange={e => setFormHorario({...formHorario, horaInicio: e.target.value})} value={formHorario.horaInicio} aria-label="Seleccionar hora de inicio del turno" />
                                         </Form.Group>
                                     </Col>
                                 </Row>
                                 <div className="d-flex justify-content-end mt-3">
-                                    <Button type="submit" className="btn-primary-modern px-4">
+                                    <Button type="submit" className="btn-primary-modern px-4" aria-label="Guardar programación del turno médico">
                                         Guardar Programación
                                     </Button>
                                 </div>
@@ -211,9 +215,10 @@ const GestionProgramacion = () => {
                                                 value={nombreCons} 
                                                 onChange={e => setNombreCons(e.target.value)} 
                                                 required 
+                                                aria-label="Nombre o número del nuevo consultorio"
                                             />
                                         </Form.Group>
-                                        <Button type="submit" className="btn-primary-modern w-100">
+                                        <Button type="submit" className="btn-primary-modern w-100" aria-label="Registrar nuevo consultorio">
                                             Crear
                                         </Button>
                                     </Form>

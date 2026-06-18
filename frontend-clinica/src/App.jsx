@@ -1,8 +1,9 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Layout from './components/Layout';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer, toast } from 'react-toastify';
 
 // Páginas Generales
 import LoginPage from './pages/LoginPage';
@@ -27,6 +28,32 @@ import AgendarCitaPage from './pages/recepcion/AgendarCitaPage';
 import CobrosPage from './pages/caja/CobrosPage';
 
 function App() {
+  useEffect(() => {
+    const handleOnline = () => {
+      toast.dismiss();
+      toast.success("Conexión restablecida con éxito.", { autoClose: 3000 });
+    };
+
+    const handleOffline = () => {
+      toast.error(
+        "Se ha detectado la pérdida de conexión a internet. Algunas funciones pueden no estar disponibles.",
+        { autoClose: false, closeOnClick: false, draggable: false }
+      );
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
