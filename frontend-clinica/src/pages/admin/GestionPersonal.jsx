@@ -50,6 +50,7 @@ const GestionPersonal = () => {
             cargarEmpleados(); // Recargar lista
         } catch (error) {
             toast.error("Error al registrar. Verifique el DNI y correo.");
+            console.error(error);
         }
     };
 

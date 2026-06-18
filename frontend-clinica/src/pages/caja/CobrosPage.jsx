@@ -60,6 +60,7 @@ const CobrosPage = () => {
             setBusqueda(''); // Limpiar buscador
         } catch (error) {
             toast.error("Error al procesar pago");
+            console.error(error);
         }
     };
 

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 const GestionProgramacion = () => {
     const [consultorios, setConsultorios] = useState([]);
     const [doctores, setDoctores] = useState([]); // Para el select
+    const [turnos, setTurnos] = useState([]); // Todos los turnos
     
     // Formulario Consultorio
     const [nombreCons, setNombreCons] = useState('');
@@ -17,7 +18,18 @@ const GestionProgramacion = () => {
     useEffect(() => {
         cargarConsultorios();
         cargarDoctores();
+        cargarTurnos();
     }, []);
+
+    const cargarTurnos = async () => {
+        try {
+            const res = await api.get('/programacion/horario/listar');
+            setTurnos(res.data);
+        } catch (error) {
+            toast.error("Error al cargar los turnos");
+            console.error(error);
+        }
+    };
 
     const cargarConsultorios = async () => {
         const res = await api.get('/programacion/consultorio/listar');
@@ -37,7 +49,10 @@ const GestionProgramacion = () => {
             toast.success("¡Consultorio registrado con éxito!");
             setNombreCons('');
             cargarConsultorios();
-        } catch (error) { toast.error("Error al crear consultorio"); }
+        } catch (error) { 
+            toast.error("Error al crear consultorio"); 
+            console.error(error);
+        }
     };
 
     // GUARDAR HORARIO
@@ -53,11 +68,35 @@ const GestionProgramacion = () => {
 
         try {
             await api.post('/programacion/horario/registrar', payload);
-            toast.success("Horario asignado correctamente");
+            toast.success("¡Horario programado con éxito!");
             setFormHorario({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
+            cargarTurnos();
         } catch (error) { 
             toast.error("Error: Posible cruce de horarios"); 
+            console.error(error);
         }
+    };
+
+    const renderEstadoBadge = (estado) => {
+        let bg = '#f3f4f6';
+        let color = '#374151';
+        
+        if (estado === 'LIBRE') {
+            bg = '#def7ec';
+            color = '#03543f';
+        } else if (estado === 'PENDIENTE') {
+            bg = '#fef3c7';
+            color = '#92400e';
+        } else if (estado === 'OCUPADO') {
+            bg = '#e1effe';
+            color = '#1e429f';
+        }
+        
+        return (
+            <span className="badge rounded-pill px-3 py-2 fw-semibold" style={{ backgroundColor: bg, color: color, fontSize: '0.85rem' }}>
+                {estado}
+            </span>
+        );
     };
 
     return (
@@ -114,6 +153,47 @@ const GestionProgramacion = () => {
                                     </Button>
                                 </div>
                             </Form>
+
+                            {/* TABLA DE TURNOS REGISTRADOS */}
+                            <div className="mt-5 border-top pt-4">
+                                <h5 className="mb-4 text-secondary">Turnos Programados Registrados</h5>
+                                <div className="border rounded overflow-hidden shadow-sm">
+                                    <Table hover responsive className="align-middle mb-0 bg-white">
+                                        <thead className="bg-light">
+                                            <tr>
+                                                <th className="p-3 text-secondary border-0">Médico</th>
+                                                <th className="p-3 text-secondary border-0">Consultorio / Ambiente</th>
+                                                <th className="p-3 text-secondary border-0">Fecha</th>
+                                                <th className="p-3 text-secondary border-0">Hora Inicio</th>
+                                                <th className="p-3 text-secondary border-0">Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {turnos.map(t => (
+                                                <tr key={t.idProgramacion}>
+                                                    <td className="p-3">
+                                                        <div className="fw-semibold text-dark">{t.nombreMedico}</div>
+                                                        <small className="text-muted">{t.especialidadMedico}</small>
+                                                    </td>
+                                                    <td className="p-3 text-dark">{t.consultorio ? t.consultorio.nombre : 'Sin consultorio'}</td>
+                                                    <td className="p-3 text-dark">{t.fecha}</td>
+                                                    <td className="p-3 text-dark">{t.horaInicio}</td>
+                                                    <td className="p-3">
+                                                        {renderEstadoBadge(t.estadoTurno)}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {turnos.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="5" className="text-center p-4 text-muted">
+                                                        No hay turnos programados en el sistema
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                            </div>
                         </div>
                     </Tab>
 

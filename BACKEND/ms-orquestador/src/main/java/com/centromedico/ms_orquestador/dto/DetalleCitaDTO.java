@@ -14,5 +14,6 @@ public class DetalleCitaDTO {
     private Long idEncargado;
     private String nombreEncargado;
     private String rolEncargado;
+    private String infoMedico;
 
 }

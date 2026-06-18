@@ -49,6 +49,7 @@ const AgendarCitaPage = () => {
             toast.success("¡Paciente registrado y seleccionado!");
         } catch (error) {
             toast.error("Error al registrar paciente.");
+            console.error(error);
         }
     };
 
@@ -80,6 +81,7 @@ const AgendarCitaPage = () => {
             // setDniBusqueda('');
         } catch (error) {
             toast.error("Error al agendar la cita.");
+            console.error(error);
         }
     };
 

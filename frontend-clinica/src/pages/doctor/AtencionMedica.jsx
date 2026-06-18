@@ -111,8 +111,9 @@ const AtencionMedica = () => {
             await api.post('/atencion/registrar', payload);
             toast.success("¡Historia clínica y receta guardadas correctamente!");
             navigate('/medico/agenda');
-        } catch (error) {
-            toast.error("Error al guardar la atención");
+        } catch (err) {
+            toast.error("Hubo un error al guardar la historia clínica");
+            console.error(err);
         }
     };
 
@@ -154,8 +155,12 @@ const AtencionMedica = () => {
                                             </Accordion.Header>
                                             <Accordion.Body>
                                                 <p><strong>Tratamiento:</strong> {at.tratamiento}</p>
-                                                {/* Si tienes infoCita enriquecida, muéstrala */}
-                                                {at.infoCita && <small className="text-muted d-block mb-2">Atendido por Dr. (Ver ID en BD)</small>}
+                                                 {/* Si tienes infoCita enriquecida, muéstrala */}
+                                                 {at.infoCita && (
+                                                     <small className="text-muted d-block mb-2">
+                                                         Atendido por Dr. {at.infoCita.infoMedico || at.nombreMedico || (at.idPersonal ? `ID: ${at.idPersonal}` : `ID: ${at.infoCita.idEncargado}`)}
+                                                     </small>
+                                                 )}
 
                                                 {at.receta && at.receta.length > 0 && (
                                                     <div className="bg-light p-2 rounded">

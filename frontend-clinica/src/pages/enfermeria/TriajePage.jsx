@@ -72,6 +72,7 @@ const TriajePage = () => {
             setDni('');
         } catch (error) {
             toast.error("Error al guardar historia");
+            console.error(error);
         }
     };
 

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthProvider';
 import ProtectedRoute from './routes/ProtectedRoute';
 import Layout from './components/Layout';
+import { ToastContainer } from 'react-toastify';
 
 // Páginas Generales
 import LoginPage from './pages/LoginPage';
@@ -86,6 +87,7 @@ function App() {
           </Route> {/* Fin del ProtectedRoute General */}
 
         </Routes>
+        <ToastContainer position="top-right" autoClose={3000} />
       </AuthProvider>
     </BrowserRouter>
   );

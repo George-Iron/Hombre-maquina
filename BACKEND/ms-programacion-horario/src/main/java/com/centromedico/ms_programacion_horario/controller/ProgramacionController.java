@@ -37,6 +37,11 @@ public class ProgramacionController implements ApiProgramacion {
     }
 
     @Override
+    public ResponseEntity<List<ProgramacionHorario>> listarHorarios() {
+        return ResponseEntity.ok(servicioProgramacion.listarTodos());
+    }
+
+    @Override
     public ResponseEntity<ProgramacionHorario> buscarHorarioPorId(Long id) {
         return ResponseEntity.ok(servicioProgramacion.buscarHorarioPorId(id));
     }

@@ -21,11 +21,14 @@ const GestionFarmacia = () => {
         e.preventDefault();
         try {
             await api.post('/farmacia/registrar', form);
-            toast.success("Medicamento registrado");
+            toast.success("¡Medicamento registrado con éxito!");
             setShowModal(false);
             setForm({ nombre: '', laboratorio: '', precio: '' });
             cargar();
-        } catch (e) { toast.error("Error al guardar"); }
+        } catch (e) { 
+            toast.error("Error al guardar medicamento"); 
+            console.error(e);
+        }
     };
 
     return (

@@ -28,6 +28,9 @@ public class ProgramacionHorario {
     private LocalTime horaFin;
     private boolean disponible;
 
+    @Transient
+    private String estadoTurno;
+
 
     public ProgramacionHorario() {}
 
@@ -122,5 +125,13 @@ public class ProgramacionHorario {
 
     public void setDisponible(boolean disponible) {
         this.disponible = disponible;
+    }
+
+    public String getEstadoTurno() {
+        return estadoTurno;
+    }
+
+    public void setEstadoTurno(String estadoTurno) {
+        this.estadoTurno = estadoTurno;
     }
 }

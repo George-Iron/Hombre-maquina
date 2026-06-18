@@ -21,11 +21,14 @@ const GestionLaboratorio = () => {
         e.preventDefault();
         try {
             await api.post('/laboratorio/registrar', form);
-            toast.success("Análisis registrado");
+            toast.success("¡Análisis registrado con éxito!");
             setShowModal(false);
             setForm({ nombre: '', descripcion: '', precio: '' });
             cargar();
-        } catch (e) { toast.error("Error al guardar"); }
+        } catch (e) { 
+            toast.error("Error al guardar análisis"); 
+            console.error(e);
+        }
     };
 
     return (

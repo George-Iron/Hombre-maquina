@@ -22,6 +22,9 @@ public interface ApiProgramacion {
     ResponseEntity<List<ProgramacionHorario>> listarHorariosDisponibles(
             @RequestParam(value = "especialidad", required = false) String especialidad);
 
+    @GetMapping("/horario/listar")
+    ResponseEntity<List<ProgramacionHorario>> listarHorarios();
+
     @GetMapping("/horario/{id}")
     ResponseEntity<ProgramacionHorario> buscarHorarioPorId(@PathVariable Long id);
 
