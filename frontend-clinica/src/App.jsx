@@ -42,6 +42,15 @@ function App() {
                 {/* Dashboard General (Accesible para todos los logueados) */}
                 <Route path="/" element={<DashboardPage />} />
 
+                {/* Acceso no autorizado */}
+                <Route path="/unauthorized" element={
+                    <div className="text-center p-5 mt-5">
+                        <h2 className="text-danger fw-bold">⚠️ Acceso No Autorizado</h2>
+                        <p className="text-secondary mt-2">Tu rol no cuenta con los permisos necesarios para ver esta sección.</p>
+                        <a href="/" className="btn btn-primary mt-3">Volver al Inicio</a>
+                    </div>
+                } />
+
                 {/* ZONA ADMIN (Exclusiva para ADMIN) */}
                 <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}> 
                     <Route path="/admin" element={<AdminDashboard />} />

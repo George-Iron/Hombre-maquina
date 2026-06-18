@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/ms-citas/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-receta/pom.xml" />
+        <option value="$PROJECT_DIR$/api-gateway/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-analisis/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-farmacia/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-historia/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-paciente/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-personal/pom.xml" />
+        <option value="$PROJECT_DIR$/eureka-server/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-facturacion/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-laboratorio/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-orquestador/pom.xml" />
+        <option value="$PROJECT_DIR$/Seguridad-Server/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-atencion-medica/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-detalle-farmacia/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-compuesto-farmacia/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-detalle-laboratorio/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-programacion-horario/pom.xml" />
+        <option value="$PROJECT_DIR$/ms-compuesto-laboratorio/pom.xml" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_21" project-jdk-name="21" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>

@@ -18,10 +18,10 @@ const LoginPage = () => {
 
         try {
             // 1. LLAMADA AL BACKEND REAL
-            // El Gateway redirige /personal/login a ms-personal
-            const response = await api.post('/personal/login', {
+            // El Gateway redirige /security/loginAsistente a Seguridad-Server
+            const response = await api.post('/security/loginAsistente', {
                 dni: dni,
-                contraseña: password
+                password: password
             });
 
             // 2. SI HAY ÉXITO

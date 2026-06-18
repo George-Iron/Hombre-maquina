@@ -10,7 +10,7 @@ const GestionPersonal = () => {
 
     // Estado del Formulario
     const [nuevoEmpleado, setNuevoEmpleado] = useState({
-        nombre: '', apellido: '', dni: '', contraseña: '', especialidad: ''
+        nombre: '', apellido: '', dni: '', correo: '', contraseña: '', especialidad: ''
     });
 
     // Cargar empleados cuando cambia el tab
@@ -36,16 +36,20 @@ const GestionPersonal = () => {
     // Guardar Empleado
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
         const payload = { ...nuevoEmpleado, rol: rolSeleccionado };
         
         try {
             await api.post('/personal/registrar', payload);
-            toast.success("¡Empleado registrado!");
+            // Sincronizar credenciales con Seguridad-Server
+            await api.post('/security/registerAsistente', { dni: payload.dni, password: payload.contraseña });
+            
+            toast.success("¡Personal registrado con éxito!");
             setShowModal(false);
-            setNuevoEmpleado({ nombre: '', apellido: '', dni: '', contraseña: '', especialidad: '' }); // Reset
+            setNuevoEmpleado({ nombre: '', apellido: '', dni: '', correo: '', contraseña: '', especialidad: '' }); // Reset
             cargarEmpleados(); // Recargar lista
         } catch (error) {
-            toast.error("Error al registrar. Verifique el DNI.");
+            toast.error("Error al registrar. Verifique el DNI y correo.");
         }
     };
 
@@ -132,6 +136,10 @@ const GestionPersonal = () => {
                         <Form.Group className="mb-3">
                             <Form.Label>Apellido</Form.Label>
                             <Form.Control name="apellido" required onChange={handleChange} value={nuevoEmpleado.apellido} />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Correo</Form.Label>
+                            <Form.Control name="correo" type="email" required onChange={handleChange} value={nuevoEmpleado.correo} />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Contraseña</Form.Label>

@@ -91,7 +91,7 @@ const DashboardPage = () => {
                 )}
 
                 {/* 2. TARJETA DOCTOR (Visible para Doctor y Admin) */}
-                {['DOCTOR', 'ADMIN'].includes(user?.rol) && (
+                {['DOCTOR', 'ADMIN'].includes(user?.role || user?.rol) && (
                     <Col md={6} lg={4}>
                         <Card className="h-100 border-0 shadow-sm card-modern border-start border-success border-4">
                             <Card.Body className="p-4">

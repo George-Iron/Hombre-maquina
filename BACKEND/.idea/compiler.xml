@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="true" />
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="api-gateway" />
+        <module name="eureka-server" />
+        <module name="Seguridad-Server" />
+      </profile>
+      <profile name="Annotation profile for ms-compuesto-laboratorio" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+        </processorPath>
+        <module name="ms-receta" />
+        <module name="ms-citas" />
+        <module name="ms-historia" />
+        <module name="ms-detalle-laboratorio" />
+        <module name="ms-facturacion" />
+        <module name="ms-laboratorio" />
+        <module name="ms-compuesto-farmacia" />
+        <module name="ms-atencion-medica" />
+        <module name="ms-compuesto-laboratorio" />
+        <module name="ms-detalle-farmacia" />
+        <module name="ms-paciente" />
+        <module name="ms-farmacia" />
+        <module name="ms-orquestador" />
+        <module name="ms-programacion-horario" />
+        <module name="ms-analisis" />
+      </profile>
+      <profile name="Annotation profile for ms-personal" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+        </processorPath>
+        <module name="ms-personal" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="Seguridad-Server" options="-parameters" />
+      <module name="api-gateway" options="-parameters" />
+      <module name="eureka-server" options="-parameters" />
+      <module name="ms-analisis" options="-parameters" />
+      <module name="ms-atencion-medica" options="-parameters" />
+      <module name="ms-citas" options="-parameters" />
+      <module name="ms-compuesto-farmacia" options="-parameters" />
+      <module name="ms-compuesto-laboratorio" options="-parameters" />
+      <module name="ms-detalle-farmacia" options="-parameters" />
+      <module name="ms-detalle-laboratorio" options="-parameters" />
+      <module name="ms-facturacion" options="-parameters" />
+      <module name="ms-farmacia" options="-parameters" />
+      <module name="ms-historia" options="-parameters" />
+      <module name="ms-laboratorio" options="-parameters" />
+      <module name="ms-orquestador" options="-parameters" />
+      <module name="ms-paciente" options="-parameters" />
+      <module name="ms-personal" options="-parameters" />
+      <module name="ms-programacion-horario" options="-parameters" />
+      <module name="ms-receta" options="-parameters" />
+    </option>
+  </component>
+</project>

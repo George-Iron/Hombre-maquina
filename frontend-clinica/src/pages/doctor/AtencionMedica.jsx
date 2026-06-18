@@ -1,8 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
-import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Accordion, Spinner } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Accordion, Spinner, Table } from 'react-bootstrap';
 import { FaHistory, FaUserInjured, FaFilePrescription, FaVials } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+
+const calcularEdad = (fecha) => {
+    if (!fecha) return 'N/A';
+    const anio = new Date(fecha).getFullYear();
+    if (isNaN(anio)) return 'N/A';
+    return new Date().getFullYear() - anio;
+};
 
 const AtencionMedica = () => {
     const { idCita } = useParams();
@@ -27,6 +35,11 @@ const AtencionMedica = () => {
     const [recetaItems, setRecetaItems] = useState([]);
     const [medSeleccionado, setMedSeleccionado] = useState('');
     const [dosis, setDosis] = useState('');
+
+    // Análisis Dinámico
+    const [analisisItems, setAnalisisItems] = useState([]);
+    const [anaSeleccionado, setAnaSeleccionado] = useState('');
+    const [indicaciones, setIndicaciones] = useState('');
 
     useEffect(() => {
         const cargarDatos = async () => {
@@ -66,8 +79,24 @@ const AtencionMedica = () => {
     const agregarMedicamento = () => {
         if (!medSeleccionado || !dosis) return;
         const medObj = medicamentos.find(m => m.idMedicamento == medSeleccionado);
-        setRecetaItems([...recetaItems, { idMedicamento: medSeleccionado, nombre: medObj.nombre, dosis }]);
-        setDosis('');
+        if (medObj) {
+            setRecetaItems([...recetaItems, { idMedicamento: medSeleccionado, nombre: medObj.nombre, dosis }]);
+            setDosis('');
+        }
+    };
+
+    const agregarAnalisis = () => {
+        if (!anaSeleccionado) return;
+        const anaObj = analisis.find(a => a.idTipoAnalisis == anaSeleccionado);
+        if (anaObj) {
+            setAnalisisItems([...analisisItems, { 
+                idTipoAnalisis: anaSeleccionado, 
+                nombreAnalisis: anaObj.nombre, 
+                indicaciones: indicaciones || 'Sin indicaciones' 
+            }]);
+            setIndicaciones('');
+            setAnaSeleccionado('');
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -76,14 +105,14 @@ const AtencionMedica = () => {
             idCita: idCita,
             diagnostico, tratamiento, observaciones,
             receta: recetaItems,
-            ordenesAnalisis: []
+            ordenesAnalisis: analisisItems
         };
         try {
             await api.post('/atencion/registrar', payload);
-            alert("✅ Atención guardada correctamente");
+            toast.success("¡Historia clínica y receta guardadas correctamente!");
             navigate('/medico/agenda');
         } catch (error) {
-            alert("Error al guardar");
+            toast.error("Error al guardar la atención");
         }
     };
 
@@ -96,7 +125,7 @@ const AtencionMedica = () => {
                 <Card.Body className="d-flex justify-content-between align-items-center">
                     <div>
                         <h2 className="mb-0"><FaUserInjured className="me-2" /> {paciente?.nombre}</h2>
-                        <small>DNI: {paciente?.documento} | Tel: {paciente?.telefono} | Edad: {new Date().getFullYear() - new Date(paciente?.fechaNac).getFullYear()} años</small>
+                        <small>DNI: {paciente?.documento} | Tel: {paciente?.telefono} | Edad: {calcularEdad(paciente?.fechaNac)}{calcularEdad(paciente?.fechaNac) !== 'N/A' ? ' años' : ''}</small>
                     </div>
                     <div className="text-end">
                         <Badge bg="light" text="dark" className="me-2">Peso: {historia?.peso || 'N/A'}</Badge>
@@ -207,6 +236,37 @@ const AtencionMedica = () => {
                                         <tbody>
                                             {recetaItems.map((item, idx) => (
                                                 <tr key={idx}><td>{item.nombre}</td><td>{item.dosis}</td></tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                )}
+
+                                <hr className="my-4" />
+
+                                <h6 className="text-info"><FaVials className="me-2" /> Análisis de Laboratorio</h6>
+                                <Row className="align-items-end mb-3">
+                                    <Col md={5}>
+                                        <Form.Label>Análisis</Form.Label>
+                                        <Form.Select value={anaSeleccionado} onChange={e => setAnaSeleccionado(e.target.value)}>
+                                            <option value="">Buscar...</option>
+                                            {analisis.map(a => <option key={a.idTipoAnalisis} value={a.idTipoAnalisis}>{a.nombre}</option>)}
+                                        </Form.Select>
+                                    </Col>
+                                    <Col md={5}>
+                                        <Form.Label>Indicaciones</Form.Label>
+                                        <Form.Control placeholder="Ej: En ayunas" value={indicaciones} onChange={e => setIndicaciones(e.target.value)} />
+                                    </Col>
+                                    <Col md={2}>
+                                        <Button variant="outline-info" className="w-100" onClick={agregarAnalisis}>Agregar</Button>
+                                    </Col>
+                                </Row>
+
+                                {analisisItems.length > 0 && (
+                                    <Table size="sm" bordered>
+                                        <thead><tr><th>Análisis</th><th>Indicaciones</th></tr></thead>
+                                        <tbody>
+                                            {analisisItems.map((item, idx) => (
+                                                <tr key={idx}><td>{item.nombreAnalisis}</td><td>{item.indicaciones}</td></tr>
                                             ))}
                                         </tbody>
                                     </Table>

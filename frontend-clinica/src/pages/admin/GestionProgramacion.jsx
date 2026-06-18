@@ -34,7 +34,7 @@ const GestionProgramacion = () => {
         e.preventDefault();
         try {
             await api.post('/programacion/consultorio/registrar', { nombre: nombreCons });
-            toast.success("Consultorio creado");
+            toast.success("¡Consultorio registrado con éxito!");
             setNombreCons('');
             cargarConsultorios();
         } catch (error) { toast.error("Error al crear consultorio"); }
