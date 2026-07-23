@@ -25,6 +25,19 @@ public class LaboratorioController {
         return ResponseEntity.ok(servicio.listar());
     }
 
+    @GetMapping("/nombres-predefinidos")
+    public ResponseEntity<List<String>> listarNombresPredefinidos() {
+        return ResponseEntity.ok(List.of(
+            "Hemograma",
+            "Perfil Lipídico",
+            "Examen de Orina",
+            "Glucosa",
+            "Urea",
+            "Creatinina",
+            "Perfil Hepático"
+        ));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<TipoAnalisis> buscarPorId(@PathVariable Long id) {
         return servicio.buscarPorId(id)

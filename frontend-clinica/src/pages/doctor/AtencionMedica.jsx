@@ -230,7 +230,7 @@ const AtencionMedica = () => {
                                         <Form.Label>Medicamento</Form.Label>
                                         <Form.Select value={medSeleccionado} onChange={e => setMedSeleccionado(e.target.value)} aria-label="Seleccionar Medicamento para Receta">
                                             <option value="">Buscar...</option>
-                                            {medicamentos.map(m => <option key={m.idMedicamento} value={m.idMedicamento}>{m.nombre}</option>)}
+                                            {medicamentos.map(m => <option key={m.idMedicamento} value={m.idMedicamento}>{m.nombre} - {m.laboratorio}</option>)}
                                         </Form.Select>
                                     </Col>
                                     <Col md={5}>

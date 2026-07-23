@@ -15,8 +15,9 @@ const AgendarCitaPage = () => {
     
     // Formulario Nuevo Paciente
     const [formPaciente, setFormPaciente] = useState({
-        documento: '', nombre: '', fechaNac: '', telefono: ''
+        documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
     });
+    const [errors, setErrors] = useState({});
 
     // --- ESTADOS PROGRAMACIÓN ---
     const [especialidad, setEspecialidad] = useState('');
@@ -38,21 +39,103 @@ const AgendarCitaPage = () => {
         }
     };
 
+    const validatePacienteField = (name, value) => {
+        let errorMsg = '';
+        if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+            if (value.length < 2 || value.length > 50) {
+                errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+            }
+        } else if (name === 'documento') {
+            if (!/^\d{8}$/.test(value)) {
+                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+            }
+        } else if (name === 'telefono') {
+            if (!/^\d{9}$/.test(value)) {
+                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+            }
+        } else if (name === 'nombre') {
+            if (value.trim().length === 0) {
+                errorMsg = "El nombre es requerido";
+            }
+        }
+        setErrors(prev => ({ ...prev, [name]: errorMsg }));
+        return errorMsg;
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setFormPaciente({
+            documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
+        });
+        setErrors({});
+    };
+
     // 2. REGISTRAR PACIENTE NUEVO (MODAL)
     const handleRegistrarPaciente = async (e) => {
         e.preventDefault();
+        
+        // Validar todos los campos antes de enviar
+        const fieldsToValidate = ['documento', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono'];
+        let formIsValid = true;
+        const newErrors = {};
+        
+        fieldsToValidate.forEach(field => {
+            let value = formPaciente[field] || '';
+            let errorMsg = '';
+            if (field === 'apellidoPaterno' || field === 'apellidoMaterno') {
+                if (value.length < 2 || value.length > 50) {
+                    errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+                }
+            } else if (field === 'documento') {
+                if (!/^\d{8}$/.test(value)) {
+                    errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+                }
+            } else if (field === 'telefono') {
+                if (!/^\d{9}$/.test(value)) {
+                    errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+                }
+            } else if (field === 'nombre') {
+                if (value.trim().length === 0) {
+                    errorMsg = "El nombre es requerido";
+                }
+            }
+            if (errorMsg) {
+                newErrors[field] = errorMsg;
+                formIsValid = false;
+            }
+        });
+        
+        setErrors(newErrors);
+        
+        if (!formIsValid) {
+            toast.error("Por favor, corrija los errores en el formulario.");
+            return;
+        }
+
+        const payload = {
+            documento: formPaciente.documento,
+            nombre: formPaciente.nombre,
+            apellido: `${formPaciente.apellidoPaterno} ${formPaciente.apellidoMaterno}`,
+            fechaNac: formPaciente.fechaNac,
+            telefono: formPaciente.telefono
+        };
+
         try {
-            const res = await api.post('/paciente/registrar', formPaciente);
+            const res = await api.post('/paciente/registrar', payload);
             // MAGIA: Una vez registrado, lo seleccionamos automáticamente
             setPacienteEncontrado(res.data);
             setShowModal(false);
+            setFormPaciente({
+                documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
+            });
+            setErrors({});
             toast.success("¡Paciente registrado y seleccionado!");
         } catch (error) {
             toast.error("Error al registrar paciente.");
             console.error(error);
         }
     };
-
+    
     // 3. BUSCAR HORARIOS
     const buscarHorarios = async () => {
         if(!especialidad) return;
@@ -186,22 +269,32 @@ const AgendarCitaPage = () => {
                 </Col>
             </Row>
 
+
             {/* --- MODAL REGISTRO RÁPIDO --- */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static">
+            <Modal show={showModal} onHide={handleCloseModal} backdrop="static">
                 <Modal.Header closeButton className="bg-success text-white">
                     <Modal.Title><FaUserPlus title="Icono Registrar Usuario"/> Nuevo Paciente</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleRegistrarPaciente}>
+                    <Form onSubmit={handleRegistrarPaciente} noValidate>
                         <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>DNI / Documento</Form.Label>
                                     <Form.Control required 
+                                        maxLength="8"
                                         value={formPaciente.documento} 
-                                        onChange={e => setFormPaciente({...formPaciente, documento: e.target.value})} 
+                                        onChange={e => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            setFormPaciente({...formPaciente, documento: val});
+                                            validatePacienteField('documento', val);
+                                        }} 
+                                        isInvalid={!!errors.documento}
                                         aria-label="Ingresar DNI o Documento de Identidad del nuevo paciente"
                                     />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.documento}
+                                    </Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
@@ -217,31 +310,88 @@ const AgendarCitaPage = () => {
                         </Row>
                         
                         <Form.Group className="mb-3">
-                            <Form.Label>Nombre Completo</Form.Label>
-                            <Form.Control placeholder="Ej: Juan Perez" required 
+                            <Form.Label>Nombres</Form.Label>
+                            <Form.Control placeholder="Ej: Juan" required 
                                 value={formPaciente.nombre} 
-                                onChange={e => setFormPaciente({...formPaciente, nombre: e.target.value})} 
-                                aria-label="Ingresar nombre completo del nuevo paciente"
+                                onChange={e => {
+                                    const val = e.target.value;
+                                    setFormPaciente({...formPaciente, nombre: val});
+                                    validatePacienteField('nombre', val);
+                                }} 
+                                isInvalid={!!errors.nombre}
+                                aria-label="Ingresar nombres del nuevo paciente"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.nombre}
+                            </Form.Control.Feedback>
                         </Form.Group>
+
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Apellido Paterno</Form.Label>
+                                    <Form.Control placeholder="Ej: Perez" required 
+                                        maxLength="50"
+                                        value={formPaciente.apellidoPaterno} 
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setFormPaciente({...formPaciente, apellidoPaterno: val});
+                                            validatePacienteField('apellidoPaterno', val);
+                                        }} 
+                                        isInvalid={!!errors.apellidoPaterno}
+                                        aria-label="Ingresar apellido paterno del nuevo paciente"
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.apellidoPaterno}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Apellido Materno</Form.Label>
+                                    <Form.Control placeholder="Ej: Gomez" required 
+                                        maxLength="50"
+                                        value={formPaciente.apellidoMaterno} 
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setFormPaciente({...formPaciente, apellidoMaterno: val});
+                                            validatePacienteField('apellidoMaterno', val);
+                                        }} 
+                                        isInvalid={!!errors.apellidoMaterno}
+                                        aria-label="Ingresar apellido materno del nuevo paciente"
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.apellidoMaterno}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                        </Row>
 
                         <Form.Group className="mb-3">
                             <Form.Label>Teléfono</Form.Label>
                             <Form.Control placeholder="999..." required 
+                                maxLength="9"
                                 value={formPaciente.telefono} 
-                                onChange={e => setFormPaciente({...formPaciente, telefono: e.target.value})} 
+                                onChange={e => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setFormPaciente({...formPaciente, telefono: val});
+                                    validatePacienteField('telefono', val);
+                                }} 
+                                isInvalid={!!errors.telefono}
                                 aria-label="Ingresar teléfono del nuevo paciente"
                             />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.telefono}
+                            </Form.Control.Feedback>
                         </Form.Group>
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => setShowModal(false)} aria-label="Cerrar registro de paciente">Cancelar</Button>
+                            <Button variant="secondary" onClick={handleCloseModal} aria-label="Cerrar registro de paciente">Cancelar</Button>
                             <Button type="submit" variant="success" aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
                         </div>
                     </Form>
                 </Modal.Body>
             </Modal>
-
         </Container>
     );
 };

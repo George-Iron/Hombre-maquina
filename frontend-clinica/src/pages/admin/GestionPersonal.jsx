@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../config/axios';
-import { Container, Table, Button, Modal, Form, Tab, Tabs, Badge } from 'react-bootstrap';
+import { Container, Table, Button, Modal, Form, Tab, Tabs, Badge, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const GestionPersonal = () => {
@@ -10,8 +10,10 @@ const GestionPersonal = () => {
 
     // Estado del Formulario
     const [nuevoEmpleado, setNuevoEmpleado] = useState({
-        nombre: '', apellido: '', dni: '', correo: '', contraseña: '', especialidad: ''
+        nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
     });
+
+    const [errors, setErrors] = useState({});
 
     // Cargar empleados cuando cambia el tab
     useEffect(() => {
@@ -28,16 +30,128 @@ const GestionPersonal = () => {
         }
     };
 
+    const validateField = (name, value) => {
+        let errorMsg = '';
+        if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+            if (value.length < 2 || value.length > 50) {
+                errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+            }
+        } else if (name === 'dni') {
+            if (!/^\d{8}$/.test(value)) {
+                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+            }
+        } else if (name === 'telefono') {
+            if (!/^\d{9}$/.test(value)) {
+                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+            }
+        } else if (name === 'nombre') {
+            if (value.trim().length === 0) {
+                errorMsg = "El nombre es requerido";
+            }
+        } else if (name === 'correo') {
+            if (!/\S+@\S+\.\S+/.test(value)) {
+                errorMsg = "El correo no es válido";
+            }
+        } else if (name === 'contraseña') {
+            if (value.length < 4) {
+                errorMsg = "La contraseña debe tener al menos 4 caracteres";
+            }
+        }
+        setErrors(prev => ({ ...prev, [name]: errorMsg }));
+        return errorMsg;
+    };
+
     // Manejar inputs del formulario
     const handleChange = (e) => {
-        setNuevoEmpleado({ ...nuevoEmpleado, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        let newValue = value;
+        if (name === 'dni' || name === 'telefono') {
+            newValue = value.replace(/\D/g, '');
+        }
+        setNuevoEmpleado(prev => ({ ...prev, [name]: newValue }));
+        validateField(name, newValue);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setNuevoEmpleado({
+            nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
+        });
+        setErrors({});
+    };
+
+    const handleEliminar = async (id) => {
+        if (window.confirm("¿Está seguro de que desea eliminar a este empleado?")) {
+            try {
+                await api.delete(`/personal/eliminar/${id}`);
+                toast.success("¡Personal eliminado con éxito!");
+                cargarEmpleados();
+            } catch (error) {
+                toast.error("Error al eliminar al personal.");
+                console.error(error);
+            }
+        }
     };
 
     // Guardar Empleado
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const payload = { ...nuevoEmpleado, rol: rolSeleccionado };
+        // Validar todos los campos antes de enviar
+        const fieldsToValidate = ['dni', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono', 'correo', 'contraseña'];
+        let formIsValid = true;
+        const newErrors = {};
+        
+        fieldsToValidate.forEach(field => {
+            let value = nuevoEmpleado[field] || '';
+            let errorMsg = '';
+            if (field === 'apellidoPaterno' || field === 'apellidoMaterno') {
+                if (value.length < 2 || value.length > 50) {
+                    errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+                }
+            } else if (field === 'dni') {
+                if (!/^\d{8}$/.test(value)) {
+                    errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+                }
+            } else if (field === 'telefono') {
+                if (!/^\d{9}$/.test(value)) {
+                    errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+                }
+            } else if (field === 'nombre') {
+                if (value.trim().length === 0) {
+                    errorMsg = "El nombre es requerido";
+                }
+            } else if (field === 'correo') {
+                if (!/\S+@\S+\.\S+/.test(value)) {
+                    errorMsg = "El correo no es válido";
+                }
+            } else if (field === 'contraseña') {
+                if (value.length < 4) {
+                    errorMsg = "La contraseña debe tener al menos 4 caracteres";
+                }
+            }
+            if (errorMsg) {
+                newErrors[field] = errorMsg;
+                formIsValid = false;
+            }
+        });
+        
+        setErrors(newErrors);
+        
+        if (!formIsValid) {
+            toast.error("Por favor, corrija los errores en el formulario.");
+            return;
+        }
+        
+        const payload = {
+            nombre: nuevoEmpleado.nombre,
+            apellido: `${nuevoEmpleado.apellidoPaterno} ${nuevoEmpleado.apellidoMaterno}`,
+            dni: nuevoEmpleado.dni,
+            correo: nuevoEmpleado.correo,
+            contraseña: nuevoEmpleado.contraseña,
+            especialidad: nuevoEmpleado.especialidad,
+            rol: rolSeleccionado
+        };
         
         try {
             await api.post('/personal/registrar', payload);
@@ -46,7 +160,10 @@ const GestionPersonal = () => {
             
             toast.success("¡Personal registrado con éxito!");
             setShowModal(false);
-            setNuevoEmpleado({ nombre: '', apellido: '', dni: '', correo: '', contraseña: '', especialidad: '' }); // Reset
+            setNuevoEmpleado({
+                nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
+            }); // Reset
+            setErrors({});
             cargarEmpleados(); // Recargar lista
         } catch (error) {
             toast.error("Error al registrar. Verifique el DNI y correo.");
@@ -104,7 +221,7 @@ const GestionPersonal = () => {
                                     <td><Badge bg="info" className="fw-normal">{emp.especialidad}</Badge></td>
                                 )}
                                 <td>
-                                    <Button variant="outline-danger" size="sm">Eliminar</Button>
+                                    <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(emp.idEmpleado)}>Eliminar</Button>
                                 </td>
                             </tr>
                         ))}
@@ -120,49 +237,135 @@ const GestionPersonal = () => {
             </div>
 
             {/* MODAL DE REGISTRO */}
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={handleCloseModal} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Registrar Nuevo {rolSeleccionado}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit} noValidate>
                         <Form.Group className="mb-3">
                             <Form.Label>DNI</Form.Label>
-                            <Form.Control name="dni" required onChange={handleChange} value={nuevoEmpleado.dni} />
+                            <Form.Control 
+                                name="dni" 
+                                required 
+                                maxLength="8"
+                                onChange={handleChange} 
+                                value={nuevoEmpleado.dni} 
+                                isInvalid={!!errors.dni}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.dni}
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Nombre</Form.Label>
-                            <Form.Control name="nombre" required onChange={handleChange} value={nuevoEmpleado.nombre} />
+                            <Form.Label>Nombres</Form.Label>
+                            <Form.Control 
+                                name="nombre" 
+                                required 
+                                onChange={handleChange} 
+                                value={nuevoEmpleado.nombre} 
+                                isInvalid={!!errors.nombre}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.nombre}
+                            </Form.Control.Feedback>
                         </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Apellido Paterno</Form.Label>
+                                    <Form.Control 
+                                        name="apellidoPaterno" 
+                                        required 
+                                        maxLength="50"
+                                        onChange={handleChange} 
+                                        value={nuevoEmpleado.apellidoPaterno} 
+                                        isInvalid={!!errors.apellidoPaterno}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.apellidoPaterno}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Apellido Materno</Form.Label>
+                                    <Form.Control 
+                                        name="apellidoMaterno" 
+                                        required 
+                                        maxLength="50"
+                                        onChange={handleChange} 
+                                        value={nuevoEmpleado.apellidoMaterno} 
+                                        isInvalid={!!errors.apellidoMaterno}
+                                    />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.apellidoMaterno}
+                                    </Form.Control.Feedback>
+                                </Form.Group>
+                            </Col>
+                        </Row>
                         <Form.Group className="mb-3">
-                            <Form.Label>Apellido</Form.Label>
-                            <Form.Control name="apellido" required onChange={handleChange} value={nuevoEmpleado.apellido} />
+                            <Form.Label>Teléfono</Form.Label>
+                            <Form.Control 
+                                name="telefono" 
+                                required 
+                                maxLength="9"
+                                onChange={handleChange} 
+                                value={nuevoEmpleado.telefono} 
+                                isInvalid={!!errors.telefono}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.telefono}
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Correo</Form.Label>
-                            <Form.Control name="correo" type="email" required onChange={handleChange} value={nuevoEmpleado.correo} />
+                            <Form.Control 
+                                name="correo" 
+                                type="email" 
+                                required 
+                                onChange={handleChange} 
+                                value={nuevoEmpleado.correo} 
+                                isInvalid={!!errors.correo}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.correo}
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Contraseña</Form.Label>
-                            <Form.Control name="contraseña" type="password" required onChange={handleChange} value={nuevoEmpleado.contraseña} />
+                            <Form.Control 
+                                name="contraseña" 
+                                type="password" 
+                                required 
+                                onChange={handleChange} 
+                                value={nuevoEmpleado.contraseña} 
+                                isInvalid={!!errors.contraseña}
+                            />
+                            <Form.Control.Feedback type="invalid">
+                                {errors.contraseña}
+                            </Form.Control.Feedback>
                         </Form.Group>
 
                         {/* La especialidad seguirá apareciendo SOLO si es DOCTOR */}
                         {rolSeleccionado === 'DOCTOR' && (
                             <Form.Group className="mb-3">
                                 <Form.Label>Especialidad</Form.Label>
-                                <Form.Select name="especialidad" onChange={handleChange} value={nuevoEmpleado.especialidad}>
+                                <Form.Select name="especialidad" onChange={handleChange} value={nuevoEmpleado.especialidad} isInvalid={!!errors.especialidad}>
                                     <option value="">Seleccione...</option>
                                     <option value="Cardiologia">Cardiología</option>
                                     <option value="Pediatria">Pediatría</option>
                                     <option value="General">Medicina General</option>
                                     <option value="Dermatologia">Dermatología</option>
                                 </Form.Select>
+                                <Form.Control.Feedback type="invalid">
+                                    {errors.especialidad}
+                                </Form.Control.Feedback>
                             </Form.Group>
                         )}
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
+                            <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
                             <Button className="btn-primary-modern" type="submit">Guardar</Button>
                         </div>
                     </Form>

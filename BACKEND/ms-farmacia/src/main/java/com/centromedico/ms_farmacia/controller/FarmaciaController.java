@@ -25,6 +25,34 @@ public class FarmaciaController {
         return ResponseEntity.ok(servicio.listar());
     }
 
+    @GetMapping("/laboratorios")
+    public ResponseEntity<List<String>> listarLaboratorios() {
+        return ResponseEntity.ok(List.of(
+            "Bago",
+            "Genfar",
+            "Hersil",
+            "Portugal",
+            "Mylan",
+            "Roche",
+            "Pfizer",
+            "Sjcorp"
+        ));
+    }
+
+    @GetMapping("/nombres-predefinidos")
+    public ResponseEntity<List<String>> listarNombresPredefinidos() {
+        return ResponseEntity.ok(List.of(
+            "Paracetamol",
+            "Ibuprofeno",
+            "Amoxicilina",
+            "Omeprazol",
+            "Loratadina",
+            "Atorvastatina",
+            "Metformina",
+            "Aspirina"
+        ));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Medicamento> buscarPorId(@PathVariable Long id) {
         return servicio.buscarPorId(id)

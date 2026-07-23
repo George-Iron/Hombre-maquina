@@ -5,14 +5,28 @@ import { toast } from 'react-toastify';
 
 const GestionFarmacia = () => {
     const [medicamentos, setMedicamentos] = useState([]);
+    const [laboratorios, setLaboratorios] = useState([]);
+    const [nombresPredefinidos, setNombresPredefinidos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ nombre: '', laboratorio: '', precio: '' });
 
     const cargar = async () => {
         try {
-            const res = await api.get('/farmacia/listar');
-            setMedicamentos(res.data);
-        } catch (e) { console.error(e); }
+            const [resMeds, resLabs, resNombres] = await Promise.all([
+                api.get('/farmacia/listar'),
+                api.get('/farmacia/laboratorios'),
+                api.get('/farmacia/nombres-predefinidos')
+            ]);
+            setMedicamentos(resMeds.data);
+            setLaboratorios(resLabs.data);
+            setNombresPredefinidos(resNombres.data);
+        } catch (e) {
+            console.error(e);
+            try {
+                const resMeds = await api.get('/farmacia/listar');
+                setMedicamentos(resMeds.data);
+            } catch (err) { console.error(err); }
+        }
     };
 
     useEffect(() => { cargar(); }, []);
@@ -80,19 +94,29 @@ const GestionFarmacia = () => {
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre Comercial</Form.Label>
-                            <Form.Control 
+                            <Form.Select 
                                 required 
                                 value={form.nombre}
-                                onChange={e => setForm({...form, nombre: e.target.value})} 
-                            />
+                                onChange={e => setForm({...form, nombre: e.target.value})}
+                            >
+                                <option value="">Seleccione un medicamento...</option>
+                                {nombresPredefinidos.map((nom, index) => (
+                                    <option key={index} value={nom}>{nom}</option>
+                                ))}
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Laboratorio</Form.Label>
-                            <Form.Control 
+                            <Form.Select 
                                 required 
                                 value={form.laboratorio}
-                                onChange={e => setForm({...form, laboratorio: e.target.value})} 
-                            />
+                                onChange={e => setForm({...form, laboratorio: e.target.value})}
+                            >
+                                <option value="">Seleccione un laboratorio...</option>
+                                {laboratorios.map((lab, index) => (
+                                    <option key={index} value={lab}>{lab}</option>
+                                ))}
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Precio Unitario (S/)</Form.Label>

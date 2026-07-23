@@ -6,7 +6,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-public class MsFarmaciaApplication {
+public class
+MsFarmaciaApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(MsFarmaciaApplication.class, args);

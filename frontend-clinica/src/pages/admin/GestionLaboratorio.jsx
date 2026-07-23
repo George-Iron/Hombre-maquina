@@ -5,14 +5,25 @@ import { toast } from 'react-toastify';
 
 const GestionLaboratorio = () => {
     const [analisis, setAnalisis] = useState([]);
+    const [nombresPredefinidos, setNombresPredefinidos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '' });
 
     const cargar = async () => {
         try {
-            const res = await api.get('/laboratorio/listar');
-            setAnalisis(res.data);
-        } catch (e) { console.error(e); }
+            const [resAnalisis, resNombres] = await Promise.all([
+                api.get('/laboratorio/listar'),
+                api.get('/laboratorio/nombres-predefinidos')
+            ]);
+            setAnalisis(resAnalisis.data);
+            setNombresPredefinidos(resNombres.data);
+        } catch (e) {
+            console.error(e);
+            try {
+                const resAnalisis = await api.get('/laboratorio/listar');
+                setAnalisis(resAnalisis.data);
+            } catch (err) { console.error(err); }
+        }
     };
 
     useEffect(() => { cargar(); }, []);
@@ -80,11 +91,16 @@ const GestionLaboratorio = () => {
                     <Form onSubmit={handleSubmit}>
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre</Form.Label>
-                            <Form.Control 
+                            <Form.Select 
                                 required 
                                 value={form.nombre}
-                                onChange={e => setForm({...form, nombre: e.target.value})} 
-                            />
+                                onChange={e => setForm({...form, nombre: e.target.value})}
+                            >
+                                <option value="">Seleccione un análisis...</option>
+                                {nombresPredefinidos.map((nom, index) => (
+                                    <option key={index} value={nom}>{nom}</option>
+                                ))}
+                            </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Descripción</Form.Label>

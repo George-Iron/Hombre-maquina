@@ -1,0 +1,322 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    build:
+      context: ./BACKEND/eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms128m"
+    networks:
+      - clinica-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  api-gateway:
+    build:
+      context: ./BACKEND/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx384m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  seguridad-server:
+    build:
+      context: ./BACKEND/Seguridad-Server
+    container_name: seguridad-server
+    ports:
+      - "8050:8050"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-analisis:
+    build:
+      context: ./BACKEND/ms-analisis
+    container_name: ms-analisis
+    ports:
+      - "8085:8085"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-atencion-medica:
+    build:
+      context: ./BACKEND/ms-atencion-medica
+    container_name: ms-atencion-medica
+    ports:
+      - "8096:8096"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-citas:
+    build:
+      context: ./BACKEND/ms-citas
+    container_name: ms-citas
+    ports:
+      - "8092:8092"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-compuesto-farmacia:
+    build:
+      context: ./BACKEND/ms-compuesto-farmacia
+    container_name: ms-compuesto-farmacia
+    ports:
+      - "8081:8081"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-compuesto-laboratorio:
+    build:
+      context: ./BACKEND/ms-compuesto-laboratorio
+    container_name: ms-compuesto-laboratorio
+    ports:
+      - "8098:8098"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-detalle-farmacia:
+    build:
+      context: ./BACKEND/ms-detalle-farmacia
+    container_name: ms-detalle-farmacia
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-detalle-laboratorio:
+    build:
+      context: ./BACKEND/ms-detalle-laboratorio
+    container_name: ms-detalle-laboratorio
+    ports:
+      - "8086:8086"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-facturacion:
+    build:
+      context: ./BACKEND/ms-facturacion
+    container_name: ms-facturacion
+    ports:
+      - "8093:8093"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-farmacia:
+    build:
+      context: ./BACKEND/ms-farmacia
+    container_name: ms-farmacia
+    ports:
+      - "8094:8094"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-historia:
+    build:
+      context: ./BACKEND/ms-historia
+    container_name: ms-historia
+    ports:
+      - "8088:8088"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-laboratorio:
+    build:
+      context: ./BACKEND/ms-laboratorio
+    container_name: ms-laboratorio
+    ports:
+      - "8095:8095"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-orquestador:
+    build:
+      context: ./BACKEND/ms-orquestador
+    container_name: ms-orquestador
+    ports:
+      - "8090:8090"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-paciente:
+    build:
+      context: ./BACKEND/ms-paciente
+    container_name: ms-paciente
+    ports:
+      - "8087:8087"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-personal:
+    build:
+      context: ./BACKEND/ms-personal
+    container_name: ms-personal
+    ports:
+      - "8089:8089"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-programacion-horario:
+    build:
+      context: ./BACKEND/ms-programacion-horario
+    container_name: ms-programacion-horario
+    ports:
+      - "8091:8091"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  ms-receta:
+    build:
+      context: ./BACKEND/ms-receta
+    container_name: ms-receta
+    ports:
+      - "8082:8082"
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xmx256m -Xms128m"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      EUREKA_INSTANCE_PREFER_IP_ADDRESS: "true"
+    networks:
+      - clinica-network
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  frontend-clinica:
+    build:
+      context: ./frontend-clinica
+    container_name: frontend-clinica
+    ports:
+      - "5173:5173"
+    networks:
+      - clinica-network
+    depends_on:
+      - api-gateway
+
+networks:
+  clinica-network:
+    driver: bridge
