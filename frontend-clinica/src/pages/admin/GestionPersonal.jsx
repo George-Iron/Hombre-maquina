@@ -8,6 +8,10 @@ const GestionPersonal = () => {
     const [rolSeleccionado, setRolSeleccionado] = useState('DOCTOR');
     const [showModal, setShowModal] = useState(false);
 
+    // Modal de confirmación de eliminación accesible
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [idEmpleadoAEliminar, setIdEmpleadoAEliminar] = useState(null);
+
     const [nuevoEmpleado, setNuevoEmpleado] = useState({
         nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
     });
@@ -98,16 +102,22 @@ const GestionPersonal = () => {
         setTouched({});
     };
 
-    const handleEliminar = async (id) => {
-        if (window.confirm("¿Está seguro de que desea eliminar a este empleado?")) {
-            try {
-                await api.delete(`/personal/eliminar/${id}`);
-                toast.success("Personal eliminado con éxito.");
-                cargarEmpleados();
-            } catch (error) {
-                toast.error("Error al eliminar al personal.");
-                console.error(error);
-            }
+    const handleConfirmarEliminar = (id) => {
+        setIdEmpleadoAEliminar(id);
+        setShowDeleteModal(true);
+    };
+
+    const ejecutarEliminacion = async () => {
+        if (!idEmpleadoAEliminar) return;
+        setShowDeleteModal(false);
+        try {
+            await api.delete(`/personal/eliminar/${idEmpleadoAEliminar}`);
+            toast.success("Personal eliminado con éxito.");
+            setIdEmpleadoAEliminar(null);
+            cargarEmpleados();
+        } catch (error) {
+            toast.error("Error al eliminar al personal.");
+            console.error(error);
         }
     };
 
@@ -144,14 +154,14 @@ const GestionPersonal = () => {
 
     return (
         <Container fluid className="p-0">
-            <div className="page-header">
-                <h2>Gestión de Personal</h2>
-            </div>
+            <header className="page-header">
+                <h1>Gestión de Personal</h1>
+            </header>
 
-            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+            <section className="card border-0" aria-label="Gestión de personal médico y administrativo">
                 <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ margin: 0 }}>Listado de Empleados</h4>
-                    <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
+                    <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Listado de Empleados</h2>
+                    <Button variant="primary" size="sm" onClick={() => setShowModal(true)} aria-label={`Registrar nuevo ${rolSeleccionado}`}>
                         + Nuevo {rolSeleccionado}
                     </Button>
                 </div>
@@ -172,14 +182,14 @@ const GestionPersonal = () => {
                 </div>
 
                 <div className="table-scroll">
-                    <Table hover responsive className="align-middle mb-0">
+                    <Table hover responsive className="align-middle mb-0" aria-label="Tabla de empleados registrados">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>DNI</th>
-                                <th>Nombre Completo</th>
-                                {rolSeleccionado === 'DOCTOR' && <th>Especialidad</th>}
-                                <th>Acciones</th>
+                                <th scope="col">ID</th>
+                                <th scope="col">DNI</th>
+                                <th scope="col">Nombre Completo</th>
+                                {rolSeleccionado === 'DOCTOR' && <th scope="col">Especialidad</th>}
+                                <th scope="col">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -192,7 +202,7 @@ const GestionPersonal = () => {
                                         <td><Badge bg="info">{emp.especialidad}</Badge></td>
                                     )}
                                     <td>
-                                        <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(emp.idEmpleado)}>Eliminar</Button>
+                                        <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(emp.idEmpleado)} aria-label={`Eliminar a ${emp.nombre} ${emp.apellido}`}>Eliminar</Button>
                                     </td>
                                 </tr>
                             ))}
@@ -206,12 +216,12 @@ const GestionPersonal = () => {
                         </tbody>
                     </Table>
                 </div>
-            </div>
+            </section>
 
             {/* MODAL DE REGISTRO */}
-            <Modal show={showModal} onHide={handleCloseModal} centered>
+            <Modal show={showModal} onHide={handleCloseModal} centered aria-labelledby="modal-registrar-title">
                 <Modal.Header closeButton>
-                    <Modal.Title>Registrar Nuevo {rolSeleccionado}</Modal.Title>
+                    <Modal.Title id="modal-registrar-title">Registrar Nuevo {rolSeleccionado}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit} noValidate>
@@ -348,6 +358,20 @@ const GestionPersonal = () => {
                         </div>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* MODAL ACCESIBLE DE CONFIRMACIÓN DE ELIMINACIÓN */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered aria-labelledby="modal-eliminar-title">
+                <Modal.Header closeButton>
+                    <Modal.Title id="modal-eliminar-title">Confirmar Eliminación</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    ¿Está seguro de que desea eliminar a este empleado? Esta acción no se puede deshacer.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+                    <Button variant="danger" onClick={ejecutarEliminacion}>Eliminar</Button>
+                </Modal.Footer>
             </Modal>
         </Container>
     );

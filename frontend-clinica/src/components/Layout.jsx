@@ -23,9 +23,30 @@ const Layout = () => {
         setShowSidebar(false);
     }, [location.pathname]);
 
+    useEffect(() => {
+        const handleKeyDownGlobal = (e) => {
+            if (e.key === 'Escape' && showSidebar) {
+                setShowSidebar(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDownGlobal);
+        return () => window.removeEventListener('keydown', handleKeyDownGlobal);
+    }, [showSidebar]);
+
     const handleLogout = () => {
         logout();
         navigate('/login');
+    };
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
+
+    const handleKeyDownTheme = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleTheme();
+        }
     };
 
     const isActive = (path) => location.pathname === path ? 'active' : '';
@@ -33,15 +54,16 @@ const Layout = () => {
     return (
         <div className="dashboard-layout">
             
-            {/* Mobile header */}
+            {/* Mobile header (320px+) */}
             <header className="mobile-header d-md-none">
                 <span className="mobile-header-title">Centro Médico</span>
                 <button 
                     type="button" 
                     className="hamburger-btn"
                     onClick={() => setShowSidebar(!showSidebar)}
-                    aria-label="Alternar menú de navegación"
-                    title="Alternar Menú"
+                    aria-label="Abrir menú de navegación"
+                    aria-expanded={showSidebar}
+                    title="Abrir Menú"
                 >
                     <span></span>
                     <span></span>
@@ -49,7 +71,8 @@ const Layout = () => {
                 </button>
             </header>
 
-            <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
+            {/* TABLERO IZQUIERDO / SIDEBAR (EXCLUSIVO CONTENEDOR DEL CONTROL DE TEMA) */}
+            <aside className={`sidebar ${showSidebar ? 'show' : ''}`} aria-label="Navegación principal">
                 <div className="sidebar-logo d-flex justify-content-between align-items-center">
                     <span>Centro Médico</span>
                     <button 
@@ -58,7 +81,7 @@ const Layout = () => {
                         onClick={() => setShowSidebar(false)}
                         aria-label="Cerrar menú de navegación"
                         title="Cerrar Menú"
-                        style={{ color: 'var(--sidebar-text)', background: 'none' }}
+                        style={{ color: 'var(--sidebar-text)', background: 'none', minHeight: '36px' }}
                     >
                         ✕
                     </button>
@@ -131,7 +154,7 @@ const Layout = () => {
 
                 </nav>
 
-                {/* FOOTER DEL SIDEBAR */}
+                {/* FOOTER DEL SIDEBAR: UBICACIÓN EXCLUSIVA Y ELEGANTE DEL SELECTOR DE TEMA */}
                 <div className="sidebar-footer">
                     <div className="sidebar-user">
                         <div className="sidebar-user-avatar">
@@ -142,14 +165,39 @@ const Layout = () => {
                             <div className="sidebar-user-role">{user?.rol}</div>
                         </div>
                     </div>
-                    <button
-                        className="theme-toggle-btn"
-                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+
+                    {/* SELECTOR DE MODO CLARO / OSCURO (ÚNICO Y EXCLUSIVO EN TODA LA INTERFAZ) */}
+                    <div
+                        role="switch"
+                        tabIndex={0}
+                        aria-checked={theme === 'dark'}
+                        aria-label="Cambiar entre modo claro y modo oscuro"
+                        className="theme-switch-control"
+                        onClick={toggleTheme}
+                        onKeyDown={handleKeyDownTheme}
                         title={theme === 'light' ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
-                        aria-label="Alternar tema de la aplicación"
                     >
-                        {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
-                    </button>
+                        <div className="d-flex align-items-center gap-2">
+                            {theme === 'light' ? (
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="5"/>
+                                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                                </svg>
+                            ) : (
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                </svg>
+                            )}
+                            <span className="theme-switch-label">
+                                {theme === 'light' ? 'Modo claro' : 'Modo oscuro'}
+                            </span>
+                        </div>
+
+                        <span className="theme-switch-badge">
+                            {theme === 'light' ? 'Claro' : 'Oscuro'}
+                        </span>
+                    </div>
+
                     <button onClick={handleLogout} className="btn-logout">
                         Cerrar sesión
                     </button>
