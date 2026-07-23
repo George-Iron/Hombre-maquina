@@ -10,6 +10,14 @@ const GestionLaboratorio = () => {
     const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '' });
     const [touched, setTouched] = useState({});
 
+    // Estado para edición
+    const [modoEditar, setModoEditar] = useState(false);
+    const [idEditar, setIdEditar] = useState(null);
+
+    // Estado para eliminación
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [idEliminar, setIdEliminar] = useState(null);
+
     const precioNum = parseFloat(form.precio);
     const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
     const isDescripcionValida = form.descripcion.trim().length >= 3;
@@ -34,6 +42,41 @@ const GestionLaboratorio = () => {
 
     useEffect(() => { cargar(); }, []);
 
+    const handleEditar = (a) => {
+        setForm({ nombre: a.nombre, descripcion: a.descripcion, precio: a.precio });
+        setModoEditar(true);
+        setIdEditar(a.idTipoAnalisis);
+        setShowModal(true);
+        setTouched({});
+    };
+
+    const handleConfirmarEliminar = (id) => {
+        setIdEliminar(id);
+        setShowDeleteModal(true);
+    };
+
+    const ejecutarEliminacion = async () => {
+        if (!idEliminar) return;
+        setShowDeleteModal(false);
+        try {
+            await api.delete(`/laboratorio/eliminar/${idEliminar}`);
+            toast.success("Análisis eliminado con éxito.");
+            setIdEliminar(null);
+            cargar();
+        } catch (e) {
+            toast.error("Error al eliminar análisis.");
+            console.error(e);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setModoEditar(false);
+        setIdEditar(null);
+        setForm({ nombre: '', descripcion: '', precio: '' });
+        setTouched({});
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!isFormValido) {
@@ -41,17 +84,23 @@ const GestionLaboratorio = () => {
             return;
         }
         try {
-            await api.post('/laboratorio/registrar', {
-                ...form,
-                descripcion: form.descripcion.trim()
-            });
-            toast.success("Análisis registrado con éxito.");
-            setShowModal(false);
-            setForm({ nombre: '', descripcion: '', precio: '' });
-            setTouched({});
+            if (modoEditar) {
+                await api.put(`/laboratorio/actualizar/${idEditar}`, {
+                    ...form,
+                    descripcion: form.descripcion.trim()
+                });
+                toast.success("Análisis actualizado con éxito.");
+            } else {
+                await api.post('/laboratorio/registrar', {
+                    ...form,
+                    descripcion: form.descripcion.trim()
+                });
+                toast.success("Análisis registrado con éxito.");
+            }
+            handleCloseModal();
             cargar();
         } catch (e) { 
-            toast.error("Error al guardar análisis."); 
+            toast.error(modoEditar ? "Error al actualizar análisis." : "Error al guardar análisis."); 
             console.error(e);
         }
     };
@@ -78,6 +127,7 @@ const GestionLaboratorio = () => {
                                 <th>Nombre</th>
                                 <th>Descripción</th>
                                 <th>Precio</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,11 +137,17 @@ const GestionLaboratorio = () => {
                                     <td style={{ fontWeight: 500 }}>{a.nombre}</td>
                                     <td>{a.descripcion}</td>
                                     <td style={{ fontVariantNumeric: 'tabular-nums' }}>S/ {a.precio}</td>
+                                    <td>
+                                        <div className="d-flex gap-1">
+                                            <Button variant="outline-primary" size="sm" onClick={() => handleEditar(a)} aria-label={`Editar ${a.nombre}`}>Editar</Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(a.idTipoAnalisis)} aria-label={`Eliminar ${a.nombre}`}>Eliminar</Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {analisis.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-4 text-muted">
+                                    <td colSpan="5" className="text-center py-4 text-muted">
                                         No hay análisis registrados en el sistema
                                     </td>
                                 </tr>
@@ -101,9 +157,10 @@ const GestionLaboratorio = () => {
                 </div>
             </div>
 
-            <Modal show={showModal} onHide={() => { setShowModal(false); setTouched({}); }} centered>
+            {/* MODAL DE REGISTRO / EDICIÓN */}
+            <Modal show={showModal} onHide={handleCloseModal} centered aria-labelledby="modal-laboratorio-title">
                 <Modal.Header closeButton>
-                    <Modal.Title>Nuevo Tipo de Análisis</Modal.Title>
+                    <Modal.Title id="modal-laboratorio-title">{modoEditar ? 'Editar Tipo de Análisis' : 'Nuevo Tipo de Análisis'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit} noValidate>
@@ -164,15 +221,29 @@ const GestionLaboratorio = () => {
                         </Form.Group>
                         
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => { setShowModal(false); setTouched({}); }}>
+                            <Button variant="secondary" onClick={handleCloseModal}>
                                 Cancelar
                             </Button>
                             <Button type="submit" variant="primary" disabled={!isFormValido}>
-                                Guardar
+                                {modoEditar ? 'Actualizar' : 'Guardar'}
                             </Button>
                         </div>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered aria-labelledby="modal-eliminar-lab-title">
+                <Modal.Header closeButton>
+                    <Modal.Title id="modal-eliminar-lab-title">Confirmar Eliminación</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    ¿Está seguro de que desea eliminar este análisis? Esta acción no se puede deshacer.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+                    <Button variant="danger" onClick={ejecutarEliminacion}>Eliminar</Button>
+                </Modal.Footer>
             </Modal>
         </Container>
     );

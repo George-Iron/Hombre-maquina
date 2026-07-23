@@ -11,6 +11,14 @@ const GestionFarmacia = () => {
     const [form, setForm] = useState({ nombre: '', laboratorio: '', precio: '' });
     const [touched, setTouched] = useState({});
 
+    // Estado para edición
+    const [modoEditar, setModoEditar] = useState(false);
+    const [idEditar, setIdEditar] = useState(null);
+
+    // Estado para eliminación
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [idEliminar, setIdEliminar] = useState(null);
+
     const precioNum = parseFloat(form.precio);
     const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
     const isFormValido = form.nombre && form.laboratorio && isPrecioValido;
@@ -36,6 +44,41 @@ const GestionFarmacia = () => {
 
     useEffect(() => { cargar(); }, []);
 
+    const handleEditar = (m) => {
+        setForm({ nombre: m.nombre, laboratorio: m.laboratorio, precio: m.precio });
+        setModoEditar(true);
+        setIdEditar(m.idMedicamento);
+        setShowModal(true);
+        setTouched({});
+    };
+
+    const handleConfirmarEliminar = (id) => {
+        setIdEliminar(id);
+        setShowDeleteModal(true);
+    };
+
+    const ejecutarEliminacion = async () => {
+        if (!idEliminar) return;
+        setShowDeleteModal(false);
+        try {
+            await api.delete(`/farmacia/eliminar/${idEliminar}`);
+            toast.success("Medicamento eliminado con éxito.");
+            setIdEliminar(null);
+            cargar();
+        } catch (e) {
+            toast.error("Error al eliminar medicamento.");
+            console.error(e);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setModoEditar(false);
+        setIdEditar(null);
+        setForm({ nombre: '', laboratorio: '', precio: '' });
+        setTouched({});
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!isFormValido) {
@@ -43,14 +86,17 @@ const GestionFarmacia = () => {
             return;
         }
         try {
-            await api.post('/farmacia/registrar', form);
-            toast.success("Medicamento registrado con éxito.");
-            setShowModal(false);
-            setForm({ nombre: '', laboratorio: '', precio: '' });
-            setTouched({});
+            if (modoEditar) {
+                await api.put(`/farmacia/actualizar/${idEditar}`, form);
+                toast.success("Medicamento actualizado con éxito.");
+            } else {
+                await api.post('/farmacia/registrar', form);
+                toast.success("Medicamento registrado con éxito.");
+            }
+            handleCloseModal();
             cargar();
         } catch (e) { 
-            toast.error("Error al guardar medicamento."); 
+            toast.error(modoEditar ? "Error al actualizar medicamento." : "Error al guardar medicamento."); 
             console.error(e);
         }
     };
@@ -77,6 +123,7 @@ const GestionFarmacia = () => {
                                 <th>Nombre</th>
                                 <th>Laboratorio</th>
                                 <th>Precio Unitario</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -86,11 +133,17 @@ const GestionFarmacia = () => {
                                     <td style={{ fontWeight: 500 }}>{m.nombre}</td>
                                     <td>{m.laboratorio}</td>
                                     <td style={{ fontVariantNumeric: 'tabular-nums' }}>S/ {m.precio}</td>
+                                    <td>
+                                        <div className="d-flex gap-1">
+                                            <Button variant="outline-primary" size="sm" onClick={() => handleEditar(m)} aria-label={`Editar ${m.nombre}`}>Editar</Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(m.idMedicamento)} aria-label={`Eliminar ${m.nombre}`}>Eliminar</Button>
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                             {medicamentos.length === 0 && (
                                 <tr>
-                                    <td colSpan="4" className="text-center py-4 text-muted">
+                                    <td colSpan="5" className="text-center py-4 text-muted">
                                         No hay medicamentos registrados
                                     </td>
                                 </tr>
@@ -100,9 +153,10 @@ const GestionFarmacia = () => {
                 </div>
             </div>
 
-            <Modal show={showModal} onHide={() => { setShowModal(false); setTouched({}); }} centered>
+            {/* MODAL DE REGISTRO / EDICIÓN */}
+            <Modal show={showModal} onHide={handleCloseModal} centered aria-labelledby="modal-farmacia-title">
                 <Modal.Header closeButton>
-                    <Modal.Title>Nuevo Medicamento</Modal.Title>
+                    <Modal.Title id="modal-farmacia-title">{modoEditar ? 'Editar Medicamento' : 'Nuevo Medicamento'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit} noValidate>
@@ -166,15 +220,29 @@ const GestionFarmacia = () => {
                         </Form.Group>
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => { setShowModal(false); setTouched({}); }}>
+                            <Button variant="secondary" onClick={handleCloseModal}>
                                 Cancelar
                             </Button>
                             <Button type="submit" variant="primary" disabled={!isFormValido}>
-                                Guardar
+                                {modoEditar ? 'Actualizar' : 'Guardar'}
                             </Button>
                         </div>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered aria-labelledby="modal-eliminar-farmacia-title">
+                <Modal.Header closeButton>
+                    <Modal.Title id="modal-eliminar-farmacia-title">Confirmar Eliminación</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    ¿Está seguro de que desea eliminar este medicamento? Esta acción no se puede deshacer.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+                    <Button variant="danger" onClick={ejecutarEliminacion}>Eliminar</Button>
+                </Modal.Footer>
             </Modal>
         </Container>
     );

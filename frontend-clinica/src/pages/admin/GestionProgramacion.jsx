@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../config/axios';
-import { Container, Row, Col, Form, Button, Table, Tabs, Tab } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Table, Tabs, Tab, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const GestionProgramacion = () => {
@@ -14,6 +14,14 @@ const GestionProgramacion = () => {
     // Formulario Horario
     const [formHorario, setFormHorario] = useState({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
     const [horarioTouched, setHorarioTouched] = useState({});
+
+    // Estado para edición de turnos
+    const [modoEditar, setModoEditar] = useState(false);
+    const [idEditar, setIdEditar] = useState(null);
+
+    // Estado para eliminación de turnos
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [idEliminar, setIdEliminar] = useState(null);
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -73,6 +81,48 @@ const GestionProgramacion = () => {
         }
     };
 
+    const handleEditarTurno = (t) => {
+        // Buscar el doctor correspondiente por nombre
+        const doctorEncontrado = doctores.find(d => 
+            `${d.nombre} ${d.apellido}` === t.nombreMedico
+        );
+        setFormHorario({
+            idMedico: doctorEncontrado ? doctorEncontrado.idEmpleado : (t.idMedico || ''),
+            idConsultorio: t.consultorio ? t.consultorio.idConsultorio : '',
+            fecha: t.fecha || '',
+            horaInicio: t.horaInicio ? t.horaInicio.substring(0, 5) : ''
+        });
+        setModoEditar(true);
+        setIdEditar(t.idProgramacion);
+        setHorarioTouched({});
+    };
+
+    const handleConfirmarEliminarTurno = (id) => {
+        setIdEliminar(id);
+        setShowDeleteModal(true);
+    };
+
+    const ejecutarEliminacionTurno = async () => {
+        if (!idEliminar) return;
+        setShowDeleteModal(false);
+        try {
+            await api.delete(`/programacion/horario/eliminar/${idEliminar}`);
+            toast.success("Turno eliminado con éxito.");
+            setIdEliminar(null);
+            cargarTurnos();
+        } catch (error) {
+            toast.error("Error al eliminar el turno.");
+            console.error(error);
+        }
+    };
+
+    const cancelarEdicion = () => {
+        setModoEditar(false);
+        setIdEditar(null);
+        setFormHorario({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
+        setHorarioTouched({});
+    };
+
     const handleGuardarHorario = async (e) => {
         e.preventDefault();
         if (!isHorarioFormValid) {
@@ -88,13 +138,20 @@ const GestionProgramacion = () => {
         };
 
         try {
-            await api.post('/programacion/horario/registrar', payload);
-            toast.success("Horario programado con éxito.");
+            if (modoEditar) {
+                await api.put(`/programacion/horario/actualizar/${idEditar}`, payload);
+                toast.success("Horario actualizado con éxito.");
+            } else {
+                await api.post('/programacion/horario/registrar', payload);
+                toast.success("Horario programado con éxito.");
+            }
             setFormHorario({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
             setHorarioTouched({});
+            setModoEditar(false);
+            setIdEditar(null);
             cargarTurnos();
         } catch (error) { 
-            toast.error("Error: Posible cruce de horarios o conflicto de asignación."); 
+            toast.error(modoEditar ? "Error al actualizar el horario." : "Error: Posible cruce de horarios o conflicto de asignación."); 
             console.error(error);
         }
     };
@@ -137,7 +194,7 @@ const GestionProgramacion = () => {
                     {/* TAB 1: ASIGNAR HORARIOS */}
                     <Tab eventKey="horarios" title="Asignar Horarios">
                         <div className="p-2">
-                            <h4 className="mb-4 text-secondary">Programar Turno Médico</h4>
+                            <h4 className="mb-4 text-secondary">{modoEditar ? 'Editar Turno Médico' : 'Programar Turno Médico'}</h4>
                             <Form onSubmit={handleGuardarHorario} noValidate>
                                 <Row>
                                     <Col md={6}>
@@ -226,9 +283,14 @@ const GestionProgramacion = () => {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-                                <div className="d-flex justify-content-end mt-3">
-                                    <Button type="submit" variant="primary" className="px-4" disabled={!isHorarioFormValid} aria-label="Guardar programación del turno médico">
-                                        Guardar Programación
+                                <div className="d-flex justify-content-end gap-2 mt-3">
+                                    {modoEditar && (
+                                        <Button variant="secondary" className="px-4" onClick={cancelarEdicion} aria-label="Cancelar edición del turno">
+                                            Cancelar Edición
+                                        </Button>
+                                    )}
+                                    <Button type="submit" variant="primary" className="px-4" disabled={!isHorarioFormValid} aria-label={modoEditar ? "Actualizar programación del turno médico" : "Guardar programación del turno médico"}>
+                                        {modoEditar ? 'Actualizar Programación' : 'Guardar Programación'}
                                     </Button>
                                 </div>
                             </Form>
@@ -245,6 +307,7 @@ const GestionProgramacion = () => {
                                                 <th className="p-3 text-secondary border-0">Fecha</th>
                                                 <th className="p-3 text-secondary border-0">Hora Inicio</th>
                                                 <th className="p-3 text-secondary border-0">Estado</th>
+                                                <th className="p-3 text-secondary border-0">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -260,11 +323,17 @@ const GestionProgramacion = () => {
                                                     <td className="p-3">
                                                         {renderEstadoBadge(t.estadoTurno)}
                                                     </td>
+                                                    <td className="p-3">
+                                                        <div className="d-flex gap-1">
+                                                            <Button variant="outline-primary" size="sm" onClick={() => handleEditarTurno(t)} aria-label={`Editar turno de ${t.nombreMedico}`}>Editar</Button>
+                                                            <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminarTurno(t.idProgramacion)} aria-label={`Eliminar turno de ${t.nombreMedico}`}>Eliminar</Button>
+                                                        </div>
+                                                    </td>
                                                 </tr>
                                             ))}
                                             {turnos.length === 0 && (
                                                 <tr>
-                                                    <td colSpan="5" className="text-center p-4 text-muted">
+                                                    <td colSpan="6" className="text-center p-4 text-muted">
                                                         No hay turnos programados en el sistema
                                                     </td>
                                                 </tr>
@@ -330,6 +399,20 @@ const GestionProgramacion = () => {
                     </Tab>
                 </Tabs>
             </div>
+
+            {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN DE TURNO */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered aria-labelledby="modal-eliminar-turno-title">
+                <Modal.Header closeButton>
+                    <Modal.Title id="modal-eliminar-turno-title">Confirmar Eliminación</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    ¿Está seguro de que desea eliminar este turno? Esta acción no se puede deshacer.
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
+                    <Button variant="danger" onClick={ejecutarEliminacionTurno}>Eliminar</Button>
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };

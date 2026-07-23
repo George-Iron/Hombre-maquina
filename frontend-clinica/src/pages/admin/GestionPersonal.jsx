@@ -12,6 +12,10 @@ const GestionPersonal = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [idEmpleadoAEliminar, setIdEmpleadoAEliminar] = useState(null);
 
+    // Estado para edición
+    const [modoEditar, setModoEditar] = useState(false);
+    const [idEmpleadoEditar, setIdEmpleadoEditar] = useState(null);
+
     const [nuevoEmpleado, setNuevoEmpleado] = useState({
         nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
     });
@@ -56,7 +60,9 @@ const GestionPersonal = () => {
                 errorMsg = "Ingrese un correo electrónico válido.";
             }
         } else if (name === 'contraseña') {
-            if (value.length < 4) {
+            if (!modoEditar && value.length < 4) {
+                errorMsg = "La contraseña debe tener al menos 4 caracteres.";
+            } else if (modoEditar && value.length > 0 && value.length < 4) {
                 errorMsg = "La contraseña debe tener al menos 4 caracteres.";
             }
         } else if (name === 'especialidad' && rolSeleccionado === 'DOCTOR') {
@@ -75,7 +81,9 @@ const GestionPersonal = () => {
         const isMaterno = nuevoEmpleado.apellidoMaterno.trim().length >= 2;
         const isTel = /^\d{9}$/.test(nuevoEmpleado.telefono);
         const isCorreo = /\S+@\S+\.\S+/.test(nuevoEmpleado.correo);
-        const isPass = nuevoEmpleado.contraseña.length >= 4;
+        const isPass = modoEditar
+            ? (nuevoEmpleado.contraseña.length === 0 || nuevoEmpleado.contraseña.length >= 4)
+            : nuevoEmpleado.contraseña.length >= 4;
         const isEsp = rolSeleccionado !== 'DOCTOR' || !!nuevoEmpleado.especialidad;
         return isDni && isNombre && isPaterno && isMaterno && isTel && isCorreo && isPass && isEsp;
     };
@@ -95,9 +103,32 @@ const GestionPersonal = () => {
 
     const handleCloseModal = () => {
         setShowModal(false);
+        setModoEditar(false);
+        setIdEmpleadoEditar(null);
         setNuevoEmpleado({
             nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
         });
+        setErrors({});
+        setTouched({});
+    };
+
+    const handleEditar = (emp) => {
+        const partes = (emp.apellido || '').split(' ');
+        const apellidoPaterno = partes[0] || '';
+        const apellidoMaterno = partes.slice(1).join(' ') || '';
+        setNuevoEmpleado({
+            nombre: emp.nombre || '',
+            apellidoPaterno,
+            apellidoMaterno,
+            dni: emp.dni || '',
+            telefono: emp.telefono || '',
+            correo: emp.correo || '',
+            contraseña: '',
+            especialidad: emp.especialidad || ''
+        });
+        setModoEditar(true);
+        setIdEmpleadoEditar(emp.idEmpleado);
+        setShowModal(true);
         setErrors({});
         setTouched({});
     };
@@ -134,20 +165,28 @@ const GestionPersonal = () => {
             apellido: `${nuevoEmpleado.apellidoPaterno.trim()} ${nuevoEmpleado.apellidoMaterno.trim()}`,
             dni: nuevoEmpleado.dni,
             correo: nuevoEmpleado.correo.trim(),
-            contraseña: nuevoEmpleado.contraseña,
             especialidad: nuevoEmpleado.especialidad,
             rol: rolSeleccionado
         };
+
+        if (nuevoEmpleado.contraseña) {
+            payload.contraseña = nuevoEmpleado.contraseña;
+        }
         
         try {
-            await api.post('/personal/registrar', payload);
-            await api.post('/security/registerAsistente', { dni: payload.dni, password: payload.contraseña });
-            
-            toast.success("Personal registrado con éxito.");
+            if (modoEditar) {
+                await api.put(`/personal/actualizar/${idEmpleadoEditar}`, payload);
+                toast.success("Personal actualizado con éxito.");
+            } else {
+                payload.contraseña = nuevoEmpleado.contraseña;
+                await api.post('/personal/registrar', payload);
+                await api.post('/security/registerAsistente', { dni: payload.dni, password: nuevoEmpleado.contraseña });
+                toast.success("Personal registrado con éxito.");
+            }
             handleCloseModal();
             cargarEmpleados();
         } catch (error) {
-            toast.error("Error al registrar. Verifique si el DNI o correo ya existen.");
+            toast.error(modoEditar ? "Error al actualizar el personal." : "Error al registrar. Verifique si el DNI o correo ya existen.");
             console.error(error);
         }
     };
@@ -202,7 +241,10 @@ const GestionPersonal = () => {
                                         <td><Badge bg="info">{emp.especialidad}</Badge></td>
                                     )}
                                     <td>
-                                        <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(emp.idEmpleado)} aria-label={`Eliminar a ${emp.nombre} ${emp.apellido}`}>Eliminar</Button>
+                                        <div className="d-flex gap-1">
+                                            <Button variant="outline-primary" size="sm" onClick={() => handleEditar(emp)} aria-label={`Editar a ${emp.nombre} ${emp.apellido}`}>Editar</Button>
+                                            <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(emp.idEmpleado)} aria-label={`Eliminar a ${emp.nombre} ${emp.apellido}`}>Eliminar</Button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -218,10 +260,10 @@ const GestionPersonal = () => {
                 </div>
             </section>
 
-            {/* MODAL DE REGISTRO */}
+            {/* MODAL DE REGISTRO / EDICIÓN */}
             <Modal show={showModal} onHide={handleCloseModal} centered aria-labelledby="modal-registrar-title">
                 <Modal.Header closeButton>
-                    <Modal.Title id="modal-registrar-title">Registrar Nuevo {rolSeleccionado}</Modal.Title>
+                    <Modal.Title id="modal-registrar-title">{modoEditar ? `Editar ${rolSeleccionado}` : `Registrar Nuevo ${rolSeleccionado}`}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleSubmit} noValidate>
@@ -235,6 +277,7 @@ const GestionPersonal = () => {
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.dni} 
                                 isInvalid={touched.dni && !!errors.dni}
+                                readOnly={modoEditar}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.dni}
@@ -317,11 +360,11 @@ const GestionPersonal = () => {
                             </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Contraseña</Form.Label>
+                            <Form.Label>{modoEditar ? 'Contraseña (dejar vacío para no cambiar)' : 'Contraseña'}</Form.Label>
                             <Form.Control 
                                 name="contraseña" 
                                 type="password" 
-                                required 
+                                required={!modoEditar}
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.contraseña} 
                                 isInvalid={touched.contraseña && !!errors.contraseña}
@@ -354,7 +397,7 @@ const GestionPersonal = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
-                            <Button variant="primary" type="submit" disabled={!isFormValid()}>Guardar</Button>
+                            <Button variant="primary" type="submit" disabled={!isFormValid()}>{modoEditar ? 'Actualizar' : 'Guardar'}</Button>
                         </div>
                     </Form>
                 </Modal.Body>
