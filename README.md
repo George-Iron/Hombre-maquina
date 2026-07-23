@@ -4,7 +4,7 @@ Sistema integral de gestión clínica multi-modulo desarrollado con una arquitec
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 * **Backend:** Java 17+, Spring Boot, Spring Cloud Eureka (Service Discovery), Spring Cloud Gateway, Spring Security / JWT.
 * **Frontend:** React, Vite, JavaScript, HTML5, CSS3 / TailwindCSS.
@@ -12,7 +12,7 @@ Sistema integral de gestión clínica multi-modulo desarrollado con una arquitec
 
 ---
 
-## 🏗️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 El sistema está dividido en microservicios independientes que se comunican a través del **API Gateway** y se registran dinámicamente en el **Eureka Server**.
 
@@ -78,7 +78,7 @@ El sistema está dividido en microservicios independientes que se comunican a tr
 
 ---
 
-### 🐳 Ejecución rápida con Docker Compose (Recomendado)
+### Ejecución rápida con Docker Compose (Recomendado)
 
 1. **Clonar el repositorio:**
    ```bash
