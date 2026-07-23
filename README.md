@@ -82,7 +82,7 @@ El sistema está dividido en microservicios independientes que se comunican a tr
 
 1. **Clonar el repositorio:**
    ```bash
-   git clone <URL_DEL_REPOSITO>
+   git clone https://github.com/George-Iron/Hombre-maquina.git
    cd TrabajoHombreMaquina
    ```
 
