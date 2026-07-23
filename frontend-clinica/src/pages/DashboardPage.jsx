@@ -140,9 +140,14 @@ const DashboardPage = () => {
                                             Agendar citas y admisión de pacientes.
                                         </p>
                                     </div>
-                                    <Link to="/recepcion/citas" className="btn btn-info btn-sm mt-3" aria-label="Ir al módulo de recepción y gestión de citas">
-                                        Gestión de Citas
-                                    </Link>
+                                    <div className="d-flex gap-2 mt-3 flex-wrap">
+                                        <Link to="/recepcion/citas" className="btn btn-info btn-sm" aria-label="Ir al módulo de recepción y gestión de citas">
+                                            Gestión de Citas
+                                        </Link>
+                                        <Link to="/recepcion/pacientes" className="btn btn-outline-info btn-sm" aria-label="Ir a la gestión de padrón de pacientes">
+                                            Pacientes
+                                        </Link>
+                                    </div>
                                 </Card.Body>
                             </Card>
                         </Col>

@@ -149,6 +149,9 @@ const Layout = () => {
                             <Link to="/recepcion/citas" className={`nav-link-modern ${isActive('/recepcion/citas')}`}>
                                 Gestión de Citas
                             </Link>
+                            <Link to="/recepcion/pacientes" className={`nav-link-modern ${isActive('/recepcion/pacientes')}`}>
+                                Pacientes
+                            </Link>
                         </>
                     )}
 

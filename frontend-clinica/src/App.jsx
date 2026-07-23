@@ -25,6 +25,7 @@ import TriajePage from './pages/enfermeria/TriajePage';
 
 // Páginas de Recepción y Caja
 import AgendarCitaPage from './pages/recepcion/AgendarCitaPage';
+import GestionPacientes from './pages/recepcion/GestionPacientes';
 import CobrosPage from './pages/caja/CobrosPage';
 
 function App() {
@@ -107,6 +108,7 @@ function App() {
                 {/* ZONA RECEPCIÓN (Recepcionistas + ADMIN) */}
                 <Route element={<ProtectedRoute allowedRoles={['RECEPCIONISTA', 'ADMIN']} />}>
                     <Route path="/recepcion/citas" element={<AgendarCitaPage />} />
+                    <Route path="/recepcion/pacientes" element={<GestionPacientes />} />
                 </Route>
 
             </Route> {/* Fin del Layout */}
