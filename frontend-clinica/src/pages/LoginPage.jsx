@@ -1,8 +1,7 @@
 import { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthProvider';
-import api from '../config/axios'; // Importamos nuestra instancia de Axios configurada
-import { Container, Form, Button, Card, Alert } from 'react-bootstrap';
+import api from '../config/axios';
 
 const LoginPage = () => {
     const [dni, setDni] = useState('');
@@ -17,20 +16,16 @@ const LoginPage = () => {
         setError('');
 
         try {
-            // 1. LLAMADA AL BACKEND REAL
-            // El Gateway redirige /security/loginAsistente a Seguridad-Server
             const response = await api.post('/security/loginAsistente', {
                 dni: dni,
                 password: password
             });
 
-            // 2. SI HAY ÉXITO
             const token = response.data.token;
-            login(token); // Guardamos el token en el contexto
-            navigate('/'); // Nos vamos al dashboard
+            login(token);
+            navigate('/');
 
         } catch (err) {
-            // 3. SI HAY ERROR (401, 500, etc)
             if (err.response && err.response.status === 401) {
                 setError('Credenciales incorrectas. Intente de nuevo.');
             } else {
@@ -41,46 +36,204 @@ const LoginPage = () => {
     };
 
     return (
-        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-            <Card style={{ width: '400px' }} className="shadow p-4">
-                <Card.Body>
-                    <h2 className="text-center mb-4 text-primary">Centro Médico</h2>
-                    <h5 className="text-center mb-4 text-secondary">Iniciar Sesión</h5>
+        <div style={{
+            minHeight: '100vh',
+            display: 'grid',
+            gridTemplateColumns: '1fr',
+            backgroundColor: 'var(--surface-ground)',
+            overflow: 'auto',
+        }}>
+            {/* Mobile: single column. Desktop: two columns */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                minHeight: '100vh',
+                width: '100%',
+                maxWidth: '960px',
+                margin: '0 auto',
+            }}>
+                {/* Left: Branding */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    padding: 'var(--space-2xl)',
+                }}>
+                    <h1 style={{
+                        fontFamily: 'var(--font-serif)',
+                        fontSize: '2.25rem',
+                        color: 'var(--text-primary)',
+                        marginBottom: 'var(--space-md)',
+                        lineHeight: 1.15,
+                    }}>
+                        Centro Médico
+                    </h1>
+                    <p style={{
+                        color: 'var(--text-tertiary)',
+                        fontSize: '1rem',
+                        lineHeight: 1.6,
+                        maxWidth: '360px',
+                    }}>
+                        Sistema integral de gestión clínica. Acceda con sus credenciales institucionales.
+                    </p>
+                </div>
 
-                    {error && <Alert variant="danger">{error}</Alert>}
+                {/* Right: Form */}
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    padding: 'var(--space-2xl)',
+                }}>
+                    <div style={{
+                        background: 'var(--surface-card)',
+                        border: '1px solid var(--border-default)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: 'var(--space-xl)',
+                        maxWidth: '400px',
+                        width: '100%',
+                    }}>
+                        <h3 style={{
+                            fontFamily: 'var(--font-serif)',
+                            marginBottom: 'var(--space-xl)',
+                            color: 'var(--text-primary)',
+                        }}>
+                            Iniciar Sesión
+                        </h3>
 
-                    <Form onSubmit={handleSubmit}>
-                        <Form.Group className="mb-3">
-                            <Form.Label>DNI</Form.Label>
-                            <Form.Control
-                                type="text"
-                                placeholder="Ingrese su DNI"
-                                value={dni}
-                                onChange={(e) => setDni(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
+                        {error && (
+                            <div style={{
+                                background: 'var(--semantic-danger-subtle)',
+                                color: 'var(--semantic-danger)',
+                                padding: 'var(--space-md)',
+                                borderRadius: 'var(--radius-md)',
+                                fontSize: '0.875rem',
+                                marginBottom: 'var(--space-lg)',
+                                border: '1px solid var(--semantic-danger)',
+                                borderColor: 'rgba(160,83,75,0.2)',
+                            }}>
+                                {error}
+                            </div>
+                        )}
 
-                        <Form.Group className="mb-3">
-                            <Form.Label>Contraseña</Form.Label>
-                            <Form.Control
-                                type="password"
-                                placeholder="********"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </Form.Group>
+                        <form onSubmit={handleSubmit}>
+                            <div style={{ marginBottom: 'var(--space-lg)' }}>
+                                <label
+                                    htmlFor="login-dni"
+                                    style={{
+                                        display: 'block',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 500,
+                                        color: 'var(--text-primary)',
+                                        marginBottom: 'var(--space-xs)',
+                                    }}
+                                >
+                                    DNI
+                                </label>
+                                <input
+                                    id="login-dni"
+                                    type="text"
+                                    placeholder="Ingrese su DNI"
+                                    value={dni}
+                                    onChange={(e) => setDni(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        fontFamily: 'var(--font-sans)',
+                                        fontSize: '0.875rem',
+                                        color: 'var(--text-primary)',
+                                        backgroundColor: 'var(--surface-card)',
+                                        border: '1px solid var(--border-default)',
+                                        borderRadius: 'var(--radius-md)',
+                                        outline: 'none',
+                                        transition: 'border-color 180ms ease, box-shadow 180ms ease',
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--accent)';
+                                        e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'var(--border-default)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
 
-                        <div className="d-grid gap-2">
-                            <Button variant="primary" type="submit">
+                            <div style={{ marginBottom: 'var(--space-xl)' }}>
+                                <label
+                                    htmlFor="login-password"
+                                    style={{
+                                        display: 'block',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 500,
+                                        color: 'var(--text-primary)',
+                                        marginBottom: 'var(--space-xs)',
+                                    }}
+                                >
+                                    Contraseña
+                                </label>
+                                <input
+                                    id="login-password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px 12px',
+                                        fontFamily: 'var(--font-sans)',
+                                        fontSize: '0.875rem',
+                                        color: 'var(--text-primary)',
+                                        backgroundColor: 'var(--surface-card)',
+                                        border: '1px solid var(--border-default)',
+                                        borderRadius: 'var(--radius-md)',
+                                        outline: 'none',
+                                        transition: 'border-color 180ms ease, box-shadow 180ms ease',
+                                    }}
+                                    onFocus={(e) => {
+                                        e.target.style.borderColor = 'var(--accent)';
+                                        e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
+                                    }}
+                                    onBlur={(e) => {
+                                        e.target.style.borderColor = 'var(--border-default)';
+                                        e.target.style.boxShadow = 'none';
+                                    }}
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 20px',
+                                    backgroundColor: 'var(--accent)',
+                                    color: 'var(--text-inverse)',
+                                    border: 'none',
+                                    borderRadius: 'var(--radius-md)',
+                                    fontFamily: 'var(--font-sans)',
+                                    fontSize: '0.9375rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 180ms ease',
+                                }}
+                                onMouseOver={(e) => {
+                                    e.target.style.backgroundColor = 'var(--accent-hover)';
+                                    e.target.style.transform = 'translateY(-1px)';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.target.style.backgroundColor = 'var(--accent)';
+                                    e.target.style.transform = 'translateY(0)';
+                                }}
+                            >
                                 Ingresar
-                            </Button>
-                        </div>
-                    </Form>
-                </Card.Body>
-            </Card>
-        </Container>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 

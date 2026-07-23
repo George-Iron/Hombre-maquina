@@ -3,7 +3,6 @@ import api from '../../config/axios';
 import { AuthContext } from '../../context/AuthProvider';
 import { Container, Row, Col, Card, Form, Button, Alert, Table, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { FaUserPlus, FaSearch, FaCalendarCheck } from 'react-icons/fa';
 
 const AgendarCitaPage = () => {
     const { user } = useContext(AuthContext);
@@ -11,7 +10,7 @@ const AgendarCitaPage = () => {
     // --- ESTADOS PACIENTE ---
     const [dniBusqueda, setDniBusqueda] = useState('');
     const [pacienteEncontrado, setPacienteEncontrado] = useState(null);
-    const [showModal, setShowModal] = useState(false); // Control del Modal
+    const [showModal, setShowModal] = useState(false);
     
     // Formulario Nuevo Paciente
     const [formPaciente, setFormPaciente] = useState({
@@ -32,9 +31,7 @@ const AgendarCitaPage = () => {
             toast.success("Paciente encontrado");
         } catch (error) {
             setPacienteEncontrado(null);
-            // Si no encuentra, sugerimos registrar
             toast.info("Paciente no encontrado. Puede registrarlo ahora.");
-            // Pre-llenamos el DNI en el formulario de registro para ahorrar tiempo
             setFormPaciente({ ...formPaciente, documento: dniBusqueda });
         }
     };
@@ -74,7 +71,6 @@ const AgendarCitaPage = () => {
     const handleRegistrarPaciente = async (e) => {
         e.preventDefault();
         
-        // Validar todos los campos antes de enviar
         const fieldsToValidate = ['documento', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono'];
         let formIsValid = true;
         const newErrors = {};
@@ -122,14 +118,13 @@ const AgendarCitaPage = () => {
 
         try {
             const res = await api.post('/paciente/registrar', payload);
-            // MAGIA: Una vez registrado, lo seleccionamos automáticamente
             setPacienteEncontrado(res.data);
             setShowModal(false);
             setFormPaciente({
                 documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
             });
             setErrors({});
-            toast.success("¡Paciente registrado y seleccionado!");
+            toast.success("Paciente registrado y seleccionado.");
         } catch (error) {
             toast.error("Error al registrar paciente.");
             console.error(error);
@@ -152,16 +147,13 @@ const AgendarCitaPage = () => {
         const payload = {
             dniPaciente: pacienteEncontrado.documento,
             idHorario: idHorario,
-            idEncargado: user.id // ID del usuario logueado
+            idEncargado: user.id
         };
 
         try {
             await api.post('/cita/registrar', payload);
-            toast.success("¡Cita Agendada Exitosamente!");
-            buscarHorarios(); // Refrescar tabla
-            // Opcional: Limpiar todo para el siguiente paciente
-            // setPacienteEncontrado(null);
-            // setDniBusqueda('');
+            toast.success("Cita Agendada Exitosamente.");
+            buscarHorarios();
         } catch (error) {
             toast.error("Error al agendar la cita.");
             console.error(error);
@@ -169,14 +161,17 @@ const AgendarCitaPage = () => {
     };
 
     return (
-        <Container className="mt-4">
-            <h2 className="text-secondary mb-4"><FaCalendarCheck title="Icono Calendario"/> Gestión de Citas</h2>
+        <Container className="p-0">
+            <div className="page-header">
+                <h2>Gestión de Citas</h2>
+                <p>Búsqueda de paciente y reserva de horario de atención.</p>
+            </div>
             
-            <Row>
+            <Row className="g-3">
                 {/* --- COLUMNA IZQUIERDA: PACIENTE --- */}
                 <Col md={4}>
-                    <Card className="shadow-sm mb-4 border-0">
-                        <Card.Header className="bg-primary text-white">
+                    <Card className="border-0 mb-4">
+                        <Card.Header>
                             <h5 className="mb-0">1. Identificar Paciente</h5>
                         </Card.Header>
                         <Card.Body>
@@ -189,13 +184,13 @@ const AgendarCitaPage = () => {
                                     aria-label="Ingresar DNI del Paciente para buscar"
                                 />
                                 <Button variant="outline-primary" onClick={buscarPaciente} aria-label="Buscar paciente por DNI">
-                                    <FaSearch title="Icono Buscar"/>
+                                    Buscar
                                 </Button>
                             </div>
 
                             {pacienteEncontrado ? (
                                 <Alert variant="success" className="text-center">
-                                    <h5>{pacienteEncontrado.nombre}</h5>
+                                    <h5 style={{ fontFamily: 'var(--font-serif)' }}>{pacienteEncontrado.nombre}</h5>
                                     <small>DNI: {pacienteEncontrado.documento}</small><br/>
                                     <small>Tel: {pacienteEncontrado.telefono}</small>
                                     <div className="mt-2">
@@ -207,8 +202,8 @@ const AgendarCitaPage = () => {
                             ) : (
                                 <div className="text-center">
                                     <p className="text-muted small">Si el paciente no existe, regístrelo aquí:</p>
-                                    <Button variant="success" className="w-100" onClick={() => setShowModal(true)}>
-                                        <FaUserPlus className="me-2"/> Registrar Nuevo Paciente
+                                    <Button variant="primary" className="w-100" onClick={() => setShowModal(true)}>
+                                        Registrar Nuevo Paciente
                                     </Button>
                                 </div>
                             )}
@@ -218,12 +213,12 @@ const AgendarCitaPage = () => {
 
                 {/* --- COLUMNA DERECHA: HORARIOS --- */}
                 <Col md={8}>
-                    <Card className="shadow-sm border-0">
-                        <Card.Header className="bg-secondary text-white">
+                    <Card className="border-0">
+                        <Card.Header>
                             <h5 className="mb-0">2. Seleccionar Horario</h5>
                         </Card.Header>
                         <Card.Body>
-                            <div className="d-flex gap-3 align-items-center mb-4 bg-light p-3 rounded">
+                            <div className="d-flex gap-3 align-items-center mb-4 p-3 rounded" style={{ background: 'var(--surface-inset)' }}>
                                 <Form.Select value={especialidad} onChange={e => setEspecialidad(e.target.value)} aria-label="Filtrar por especialidad médica">
                                     <option value="">Filtrar por Especialidad...</option>
                                     <option value="Cardiologia">Cardiología</option>
@@ -231,49 +226,50 @@ const AgendarCitaPage = () => {
                                     <option value="General">Medicina General</option>
                                     <option value="Dermatologia">Dermatología</option>
                                 </Form.Select>
-                                <Button onClick={buscarHorarios} variant="dark" aria-label="Buscar horarios de turnos disponibles">Buscar Disponibles</Button>
+                                <Button onClick={buscarHorarios} variant="primary" size="sm" style={{ whiteSpace: 'nowrap' }} aria-label="Buscar horarios de turnos disponibles">Buscar Disponibles</Button>
                             </div>
 
-                            <Table hover responsive className="align-middle">
-                                <thead className="table-light">
-                                    <tr>
-                                        <th>Fecha</th>
-                                        <th>Hora</th>
-                                        <th>Médico</th>
-                                        <th>Consultorio</th>
-                                        <th>Acción</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {horarios.map(h => (
-                                        <tr key={h.idProgramacion}>
-                                            <td>{h.fecha}</td>
-                                            <td className="fw-bold text-primary">{h.horaInicio}</td>
-                                            <td>{h.nombreMedico}</td>
-                                            <td><span className="badge bg-info text-dark">{h.consultorio?.nombre}</span></td>
-                                            <td>
-                                                <Button size="sm" variant="success" 
-                                                    disabled={!pacienteEncontrado}
-                                                    onClick={() => handleAgendar(h.idProgramacion)}
-                                                    aria-label={`Reservar Cita con Dr. ${h.nombreMedico}`}>
-                                                    Reservar Cita
-                                                </Button>
-                                            </td>
+                            <div className="table-scroll">
+                                <Table hover responsive className="align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Médico</th>
+                                            <th>Consultorio</th>
+                                            <th>Acción</th>
                                         </tr>
-                                    ))}
-                                    {horarios.length === 0 && <tr><td colSpan="5" className="text-center text-muted py-4">Seleccione una especialidad para ver horarios disponibles.</td></tr>}
-                                </tbody>
-                            </Table>
+                                    </thead>
+                                    <tbody>
+                                        {horarios.map(h => (
+                                            <tr key={h.idProgramacion}>
+                                                <td style={{ fontVariantNumeric: 'tabular-nums' }}>{h.fecha}</td>
+                                                <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{h.horaInicio}</td>
+                                                <td>{h.nombreMedico}</td>
+                                                <td><span className="badge bg-info">{h.consultorio?.nombre}</span></td>
+                                                <td>
+                                                    <Button size="sm" variant="primary" 
+                                                        disabled={!pacienteEncontrado}
+                                                        onClick={() => handleAgendar(h.idProgramacion)}
+                                                        aria-label={`Reservar Cita con Dr. ${h.nombreMedico}`}>
+                                                        Reservar Cita
+                                                    </Button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {horarios.length === 0 && <tr><td colSpan="5" className="text-center text-muted py-4">Seleccione una especialidad para ver horarios disponibles.</td></tr>}
+                                    </tbody>
+                                </Table>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
 
-
             {/* --- MODAL REGISTRO RÁPIDO --- */}
             <Modal show={showModal} onHide={handleCloseModal} backdrop="static">
-                <Modal.Header closeButton className="bg-success text-white">
-                    <Modal.Title><FaUserPlus title="Icono Registrar Usuario"/> Nuevo Paciente</Modal.Title>
+                <Modal.Header closeButton>
+                    <Modal.Title>Nuevo Paciente</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
                     <Form onSubmit={handleRegistrarPaciente} noValidate>
@@ -387,7 +383,7 @@ const AgendarCitaPage = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="secondary" onClick={handleCloseModal} aria-label="Cerrar registro de paciente">Cancelar</Button>
-                            <Button type="submit" variant="success" aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
+                            <Button type="submit" variant="primary" aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
                         </div>
                     </Form>
                 </Modal.Body>

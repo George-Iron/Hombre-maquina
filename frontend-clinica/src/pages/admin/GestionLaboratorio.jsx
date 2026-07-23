@@ -32,7 +32,7 @@ const GestionLaboratorio = () => {
         e.preventDefault();
         try {
             await api.post('/laboratorio/registrar', form);
-            toast.success("¡Análisis registrado con éxito!");
+            toast.success("Análisis registrado con éxito.");
             setShowModal(false);
             setForm({ nombre: '', descripcion: '', precio: '' });
             cargar();
@@ -43,13 +43,15 @@ const GestionLaboratorio = () => {
     };
 
     return (
-        <Container fluid className="p-4">
-            <h2 className="mb-4">🧪 Gestión de Laboratorio</h2>
+        <Container fluid className="p-0">
+            <div className="page-header">
+                <h2>Gestión de Laboratorio</h2>
+            </div>
 
-            <div className="card-modern p-4 mb-4 shadow-sm bg-white rounded">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4 className="mb-0">Listado de Análisis</h4>
-                    <Button className="btn-primary-modern" onClick={() => setShowModal(true)}>
+            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0 }}>Listado de Análisis</h4>
+                    <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
                         + Nuevo Análisis
                     </Button>
                 </div>
@@ -127,7 +129,7 @@ const GestionLaboratorio = () => {
                             <Button variant="secondary" onClick={() => setShowModal(false)}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" className="btn-primary-modern">
+                            <Button type="submit" variant="primary">
                                 Guardar
                             </Button>
                         </div>

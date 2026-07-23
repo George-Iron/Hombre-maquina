@@ -1,28 +1,34 @@
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { FaUserMd, FaClinicMedical, FaPills, FaVials } from 'react-icons/fa'; // Asegúrate de tener react-icons instalado
 
 const AdminDashboard = () => {
     const modules = [
-        { title: "Gestión de Personal", icon: <FaUserMd size={50} />, link: "/admin/personal", color: "primary" },
-        { title: "Farmacia & Medicamentos", icon: <FaPills size={50} />, link: "/admin/farmacia", color: "success" },
-        { title: "Laboratorio & Análisis", icon: <FaVials size={50} />, link: "/admin/laboratorio", color: "warning" },
-        { title: "Consultorios & Horarios", icon: <FaClinicMedical size={50} />, link: "/admin/programacion", color: "info" },
+        { title: "Gestión de Personal", description: "Alta, baja y administración de empleados.", link: "/admin/personal", btnClass: "btn-primary" },
+        { title: "Farmacia y Medicamentos", description: "Inventario y catálogo de fármacos.", link: "/admin/farmacia", btnClass: "btn-success" },
+        { title: "Laboratorio y Análisis", description: "Tipos de análisis y servicios disponibles.", link: "/admin/laboratorio", btnClass: "btn-warning" },
+        { title: "Consultorios y Horarios", description: "Infraestructura y programación de turnos.", link: "/admin/programacion", btnClass: "btn-info" },
     ];
 
     return (
-        <Container className="mt-5">
-            <h2 className="text-secondary mb-4">Panel de Administración</h2>
-            <Row>
+        <Container className="mt-4">
+            <div className="page-header">
+                <h2>Panel de Administración</h2>
+                <p>Gestión centralizada del centro médico.</p>
+            </div>
+            <Row className="g-3">
                 {modules.map((mod, idx) => (
-                    <Col md={6} lg={3} key={idx} className="mb-4">
-                        <Card className={`h-100 text-center border-${mod.color} shadow-sm hover-effect`}>
-                            <Card.Body className="d-flex flex-column justify-content-center align-items-center">
-                                <div className={`text-${mod.color} mb-3`}>
-                                    {mod.icon}
+                    <Col md={6} lg={3} key={idx}>
+                        <Card className="h-100 border-0">
+                            <Card.Body className="d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 style={{ fontFamily: 'var(--font-serif)', fontWeight: 400, marginBottom: 'var(--space-sm)' }}>
+                                        {mod.title}
+                                    </h5>
+                                    <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
+                                        {mod.description}
+                                    </p>
                                 </div>
-                                <Card.Title>{mod.title}</Card.Title>
-                                <Link to={mod.link} className={`btn btn-outline-${mod.color} mt-3 stretched-link`}>
+                                <Link to={mod.link} className={`btn ${mod.btnClass} btn-sm mt-3`}>
                                     Gestionar
                                 </Link>
                             </Card.Body>

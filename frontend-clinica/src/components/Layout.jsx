@@ -1,20 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthProvider';
-import { 
-    FaUserMd, 
-    FaClinicMedical, 
-    FaPills, 
-    FaVials, 
-    FaSignOutAlt, 
-    FaHome, 
-    FaUserCog,
-    FaMoneyBillWave,
-    FaCalendarCheck,
-    FaUserNurse,
-    FaBars,
-    FaTimes
-} from 'react-icons/fa';
 
 const Layout = () => {
     const { user, logout } = useContext(AuthContext);
@@ -42,98 +28,63 @@ const Layout = () => {
         navigate('/login');
     };
 
-    // Función para saber si el link está activo
     const isActive = (path) => location.pathname === path ? 'active' : '';
 
     return (
         <div className="dashboard-layout">
             
-            {/* Header móvil superior con hamburguesa */}
-            <header className="mobile-header d-md-none d-flex align-items-center justify-content-between p-3 bg-dark text-white border-bottom border-secondary w-100">
-                <span className="fw-bold">🏥 Clínica George</span>
+            {/* Mobile header */}
+            <header className="mobile-header d-md-none">
+                <span className="mobile-header-title">Centro Médico</span>
                 <button 
                     type="button" 
-                    className="btn btn-outline-light border-0 p-1" 
+                    className="hamburger-btn"
                     onClick={() => setShowSidebar(!showSidebar)}
                     aria-label="Alternar menú de navegación"
                     title="Alternar Menú"
                 >
-                    {showSidebar ? <FaTimes size={22} /> : <FaBars size={22} />}
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </button>
             </header>
 
             <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
                 <div className="sidebar-logo d-flex justify-content-between align-items-center">
-                    <span>🏥 Clínica George</span>
+                    <span>Centro Médico</span>
                     <button 
                         type="button"
-                        className="btn btn-sm text-white d-md-none border-0 p-1"
+                        className="btn btn-sm d-md-none border-0 p-1"
                         onClick={() => setShowSidebar(false)}
                         aria-label="Cerrar menú de navegación"
                         title="Cerrar Menú"
+                        style={{ color: 'var(--sidebar-text)', background: 'none' }}
                     >
-                        <FaTimes size={20} />
+                        ✕
                     </button>
                 </div>
                 
-                {/* Day/Night Theme Toggle Switch */}
-                <div className="d-flex justify-content-center mb-4">
-                    <div 
-                        className={`theme-toggle-switch ${theme === 'dark' ? 'dark-mode' : ''}`}
-                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-                        title={theme === 'light' ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
-                        aria-label="Alternar tema de la aplicación"
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { 
-                            if (e.key === 'Enter' || e.key === ' ') { 
-                                e.preventDefault();
-                                setTheme(theme === 'light' ? 'dark' : 'light'); 
-                            } 
-                        }}
-                    >
-                        <div className="toggle-track">
-                            {/* Nubes for Light Mode */}
-                            <div className="toggle-clouds">
-                                <div className="cloud cloud-1"></div>
-                                <div className="cloud cloud-2"></div>
-                            </div>
-                            
-                            {/* Luna Creciente and Stars for Dark Mode */}
-                            <div className="toggle-night-sky">
-                                <div className="crescent-moon"></div>
-                                <div className="star star-1">✦</div>
-                                <div className="star star-2">✦</div>
-                                <div className="star star-3">✦</div>
-                            </div>
-                            
-                            {/* White circle (Sun / Moon) */}
-                            <div className="toggle-knob"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <nav className="d-flex flex-column flex-grow-1">
-                    {/* INICIO  */}
+                <nav className="d-flex flex-column flex-grow-1" style={{ paddingTop: 'var(--space-md)' }}>
+                    {/* INICIO */}
                     <Link to="/" className={`nav-link-modern ${isActive('/')}`}>
-                        <FaHome className="nav-icon"/> Inicio
+                        Inicio
                     </Link>
 
                     {/* MENÚ ADMIN */}
                     {user?.rol === 'ADMIN' && (
                         <>
-                            <div className="text-uppercase small text-muted mt-3 mb-2 px-2">Administración</div>
+                            <div className="nav-section-label">Administración</div>
                             <Link to="/admin/personal" className={`nav-link-modern ${isActive('/admin/personal')}`}>
-                                <FaUserCog className="nav-icon"/> Personal
+                                Personal
                             </Link>
                             <Link to="/admin/programacion" className={`nav-link-modern ${isActive('/admin/programacion')}`}>
-                                <FaClinicMedical className="nav-icon"/> Infraestructura
+                                Infraestructura
                             </Link>
                             <Link to="/admin/farmacia" className={`nav-link-modern ${isActive('/admin/farmacia')}`}>
-                                <FaPills className="nav-icon"/> Farmacia
+                                Farmacia
                             </Link>
                             <Link to="/admin/laboratorio" className={`nav-link-modern ${isActive('/admin/laboratorio')}`}>
-                                <FaVials className="nav-icon"/> Laboratorio
+                                Laboratorio
                             </Link>
                         </>
                     )}
@@ -141,9 +92,9 @@ const Layout = () => {
                     {/* MENÚ DOCTOR */}
                     {['DOCTOR', 'ADMIN'].includes(user?.rol) && (
                         <>
-                            <div className="text-uppercase small text-muted mt-3 mb-2 px-2">Área Médica</div>
+                            <div className="nav-section-label">Área Médica</div>
                             <Link to="/medico/agenda" className={`nav-link-modern ${isActive('/medico/agenda')}`}>
-                                <FaUserMd className="nav-icon"/> {user?.rol === 'ADMIN' ? 'Agenda Médica' : 'Mi Agenda'}
+                                {user?.rol === 'ADMIN' ? 'Agenda Médica' : 'Mi Agenda'}
                             </Link>
                         </>
                     )}
@@ -151,9 +102,9 @@ const Layout = () => {
                     {/* MENÚ ENFERMERÍA */}
                     {['ENFERMERA', 'ADMIN'].includes(user?.rol) && (
                         <>
-                            <div className="text-uppercase small text-muted mt-3 mb-2 px-2">Triaje</div>
+                            <div className="nav-section-label">Triaje</div>
                             <Link to="/enfermeria/triaje" className={`nav-link-modern ${isActive('/enfermeria/triaje')}`}>
-                                <FaUserNurse className="nav-icon"/> Signos Vitales
+                                Signos Vitales
                             </Link>
                         </>
                     )}
@@ -161,9 +112,9 @@ const Layout = () => {
                     {/* MENÚ CAJA */}
                     {['CAJERO', 'ADMIN'].includes(user?.rol) && (
                         <>
-                            <div className="text-uppercase small text-muted mt-3 mb-2 px-2">Finanzas</div>
+                            <div className="nav-section-label">Finanzas</div>
                             <Link to="/caja/cobros" className={`nav-link-modern ${isActive('/caja/cobros')}`}>
-                                <FaMoneyBillWave className="nav-icon"/> Caja / Cobros
+                                Caja / Cobros
                             </Link>
                         </>
                     )}
@@ -171,36 +122,44 @@ const Layout = () => {
                     {/* MENÚ RECEPCIÓN */}
                     {['RECEPCIONISTA', 'ADMIN'].includes(user?.rol) && (
                         <>
-                            <div className="text-uppercase small text-muted mt-3 mb-2 px-2">Atención</div>
+                            <div className="nav-section-label">Atención</div>
                             <Link to="/recepcion/citas" className={`nav-link-modern ${isActive('/recepcion/citas')}`}>
-                                <FaCalendarCheck className="nav-icon"/> Gestión de Citas
+                                Gestión de Citas
                             </Link>
                         </>
                     )}
 
                 </nav>
 
-                {/* FOOTER DEL SIDEBAR  */}
-                <div className="mt-auto pt-3 border-top border-secondary">
-                    <div className="d-flex align-items-center mb-3 px-2">
-                        <div className="bg-primary rounded-circle text-white d-flex justify-content-center align-items-center" style={{width: 35, height: 35, marginRight: 10}}>
+                {/* FOOTER DEL SIDEBAR */}
+                <div className="sidebar-footer">
+                    <div className="sidebar-user">
+                        <div className="sidebar-user-avatar">
                             {user?.nombre?.charAt(0)}
                         </div>
-                        <div style={{fontSize: '0.85rem'}}>
-                            <div className="fw-bold text-white">{user?.nombre}</div>
-                            <div className="text-muted small">{user?.rol}</div>
+                        <div className="sidebar-user-info">
+                            <div className="sidebar-user-name">{user?.nombre}</div>
+                            <div className="sidebar-user-role">{user?.rol}</div>
                         </div>
                     </div>
-                    <button onClick={handleLogout} className="btn btn-danger w-100 btn-sm">
-                        <FaSignOutAlt className="me-2"/> Salir
+                    <button
+                        className="theme-toggle-btn"
+                        onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                        title={theme === 'light' ? "Cambiar a Modo Oscuro" : "Cambiar a Modo Claro"}
+                        aria-label="Alternar tema de la aplicación"
+                    >
+                        {theme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+                    </button>
+                    <button onClick={handleLogout} className="btn-logout">
+                        Cerrar sesión
                     </button>
                 </div>
             </aside>
 
-            {/* Backdrop para cerrar sidebar al hacer clic fuera en pantallas móviles */}
+            {/* Backdrop for mobile sidebar */}
             {showSidebar && (
                 <div 
-                    className="sidebar-backdrop d-md-none" 
+                    className="d-md-none" 
                     onClick={() => setShowSidebar(false)}
                     style={{
                         position: 'fixed',
@@ -208,7 +167,7 @@ const Layout = () => {
                         left: 0,
                         width: '100vw',
                         height: '100vh',
-                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        backgroundColor: 'rgba(0,0,0,0.4)',
                         zIndex: 998
                     }}
                 />

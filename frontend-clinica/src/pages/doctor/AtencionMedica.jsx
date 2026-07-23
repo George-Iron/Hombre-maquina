@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
-import { Container, Row, Col, Card, Form, Button, ListGroup, Badge, Accordion, Spinner, Table, Modal } from 'react-bootstrap';
-import { FaHistory, FaUserInjured, FaFilePrescription, FaVials } from 'react-icons/fa';
+import { Container, Row, Col, Card, Form, Button, Badge, Accordion, Spinner, Table, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const calcularEdad = (fecha) => {
@@ -16,28 +15,23 @@ const AtencionMedica = () => {
     const { idCita } = useParams();
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
     const [loading, setLoading] = useState(true);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [paciente, setPaciente] = useState(null);
-    const [historia, setHistoria] = useState(null); // Peso, talla
-    const [historialAtenciones, setHistorialAtenciones] = useState([]); // consultas pasadas
+    const [historia, setHistoria] = useState(null);
+    const [historialAtenciones, setHistorialAtenciones] = useState([]);
 
-    // Catálogos
     const [medicamentos, setMedicamentos] = useState([]);
     const [analisis, setAnalisis] = useState([]);
 
-    // Formulario Actual
     const [diagnostico, setDiagnostico] = useState('');
     const [tratamiento, setTratamiento] = useState('');
     const [observaciones, setObservaciones] = useState('');
 
-    // Receta Dinámica
     const [recetaItems, setRecetaItems] = useState([]);
     const [medSeleccionado, setMedSeleccionado] = useState('');
     const [dosis, setDosis] = useState('');
 
-    // Análisis Dinámico
     const [analisisItems, setAnalisisItems] = useState([]);
     const [anaSeleccionado, setAnaSeleccionado] = useState('');
     const [indicaciones, setIndicaciones] = useState('');
@@ -52,15 +46,12 @@ const AtencionMedica = () => {
                 setMedicamentos(medsRes.data);
                 setAnalisis(labsRes.data);
 
-                // 2. Buscar datos de la Cita para sacar el ID Paciente
                 const citaRes = await api.get(`/cita/${idCita}`);
                 const idPaciente = citaRes.data.idPaciente;
 
-                // 3. Buscar DNI del Paciente
                 const pacienteRes = await api.get(`/paciente/${idPaciente}`);
                 const dni = pacienteRes.data.documento;
 
-                // 4. Trae todo el expediente
                 const expedienteRes = await api.get(`/orquestador/expediente/${dni}`);
 
                 setPaciente(expedienteRes.data.paciente);
@@ -115,10 +106,10 @@ const AtencionMedica = () => {
         };
         try {
             await api.post('/atencion/registrar', payload);
-            toast.success("¡Historia clínica y receta guardadas correctamente!");
+            toast.success("Historia clínica y receta guardadas correctamente.");
             navigate('/medico/agenda');
         } catch (err) {
-            toast.error("Hubo un error al guardar la historia clínica");
+            toast.error("Hubo un error al guardar la historia clínica.");
             console.error(err);
         }
     };
@@ -126,17 +117,21 @@ const AtencionMedica = () => {
     if (loading) return <Container className="mt-5 text-center"><Spinner animation="border" /></Container>;
 
     return (
-        <Container fluid className="p-4">
+        <Container fluid className="p-0">
             {/* CABECERA DEL PACIENTE */}
-            <Card className="mb-4 border-0 shadow-sm bg-primary text-white">
-                <Card.Body className="d-flex justify-content-between align-items-center">
+            <Card className="mb-4 border-0" style={{ borderLeft: '4px solid var(--accent)' }}>
+                <Card.Body className="d-flex flex-wrap justify-content-between align-items-center">
                     <div>
-                        <h2 className="mb-0"><FaUserInjured className="me-2" title="Icono Paciente" /> {paciente?.nombre}</h2>
-                        <small>DNI: {paciente?.documento} | Tel: {paciente?.telefono} | Edad: {calcularEdad(paciente?.fechaNac)}{calcularEdad(paciente?.fechaNac) !== 'N/A' ? ' años' : ''}</small>
+                        <h2 style={{ fontFamily: 'var(--font-serif)', marginBottom: 'var(--space-xs)' }}>
+                            {paciente?.nombre}
+                        </h2>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
+                            DNI: {paciente?.documento} &middot; Tel: {paciente?.telefono} &middot; Edad: {calcularEdad(paciente?.fechaNac)}{calcularEdad(paciente?.fechaNac) !== 'N/A' ? ' años' : ''}
+                        </p>
                     </div>
-                    <div className="text-end">
-                        <Badge bg="light" text="dark" className="me-2">Peso: {historia?.peso || 'N/A'}</Badge>
-                        <Badge bg="light" text="dark">Talla: {historia?.talla || 'N/A'}</Badge>
+                    <div className="d-flex gap-2 mt-2 mt-md-0">
+                        <Badge bg="light">Peso: {historia?.peso || 'N/A'}</Badge>
+                        <Badge bg="light">Talla: {historia?.talla || 'N/A'}</Badge>
                     </div>
                 </Card.Body>
             </Card>
@@ -144,9 +139,9 @@ const AtencionMedica = () => {
             <Row>
                 {/* HISTORIAL */}
                 <Col lg={4}>
-                    <Card className="shadow-sm h-100">
-                        <Card.Header className="bg-white border-bottom">
-                            <h5 className="mb-0 text-secondary"><FaHistory className="me-2" title="Icono Historial" /> Historial Médico</h5>
+                    <Card className="h-100 border-0">
+                        <Card.Header>
+                            <h5 className="mb-0" style={{ color: 'var(--text-secondary)' }}>Historial Médico</h5>
                         </Card.Header>
                         <Card.Body style={{ maxHeight: '600px', overflowY: 'auto' }}>
                             {historialAtenciones.length === 0 ? (
@@ -161,7 +156,6 @@ const AtencionMedica = () => {
                                             </Accordion.Header>
                                             <Accordion.Body>
                                                 <p><strong>Tratamiento:</strong> {at.tratamiento}</p>
-                                                 {/* Si tienes infoCita enriquecida, muéstrala */}
                                                  {at.infoCita && (
                                                      <small className="text-muted d-block mb-2">
                                                          Atendido por Dr. {at.infoCita.infoMedico || at.nombreMedico || (at.idPersonal ? `ID: ${at.idPersonal}` : `ID: ${at.infoCita.idEncargado}`)}
@@ -169,8 +163,8 @@ const AtencionMedica = () => {
                                                  )}
 
                                                 {at.receta && at.receta.length > 0 && (
-                                                    <div className="bg-light p-2 rounded">
-                                                        <strong className="text-success"><FaFilePrescription title="Icono Receta" /> Receta:</strong>
+                                                    <div style={{ background: 'var(--surface-inset)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
+                                                        <strong style={{ color: 'var(--semantic-success)' }}>Receta:</strong>
                                                         <ul className="mb-0 ps-3 small">
                                                             {at.receta.map((r, i) => (
                                                                 <li key={i}>{r.nombreMedicamento} ({r.dosis})</li>
@@ -189,9 +183,9 @@ const AtencionMedica = () => {
 
                 {/* ATENCIÓN FORMULARIO */}
                 <Col lg={8}>
-                    <Card className="shadow-sm">
-                        <Card.Header className="bg-white border-bottom">
-                            <h5 className="mb-0 text-primary">Nueva Consulta (Cita #{idCita})</h5>
+                    <Card className="border-0">
+                        <Card.Header>
+                            <h5 className="mb-0" style={{ color: 'var(--accent)' }}>Nueva Consulta (Cita #{idCita})</h5>
                         </Card.Header>
                         <Card.Body>
                             <Form onSubmit={handleShowConfirm}>
@@ -222,9 +216,9 @@ const AtencionMedica = () => {
                                     </Col>
                                 </Row>
 
-                                <hr className="my-4" />
+                                <hr className="section-divider" />
 
-                                <h6 className="text-success"><FaFilePrescription className="me-2" title="Icono Receta" /> Receta Médica</h6>
+                                <h6 className="section-title-bar" style={{ borderLeftColor: 'var(--semantic-success)' }}>Receta Médica</h6>
                                 <Row className="align-items-end mb-3">
                                     <Col md={5}>
                                         <Form.Label>Medicamento</Form.Label>
@@ -243,7 +237,7 @@ const AtencionMedica = () => {
                                 </Row>
 
                                 {recetaItems.length > 0 && (
-                                    <Table size="sm" bordered>
+                                    <Table size="sm" className="mb-4">
                                         <thead><tr><th>Medicamento</th><th>Dosis</th></tr></thead>
                                         <tbody>
                                             {recetaItems.map((item, idx) => (
@@ -253,9 +247,9 @@ const AtencionMedica = () => {
                                     </Table>
                                 )}
 
-                                <hr className="my-4" />
+                                <hr className="section-divider" />
 
-                                <h6 className="text-info"><FaVials className="me-2" title="Icono Tubos de Ensayo" /> Análisis de Laboratorio</h6>
+                                <h6 className="section-title-bar" style={{ borderLeftColor: 'var(--semantic-info)' }}>Análisis de Laboratorio</h6>
                                 <Row className="align-items-end mb-3">
                                     <Col md={5}>
                                         <Form.Label>Análisis</Form.Label>
@@ -274,7 +268,7 @@ const AtencionMedica = () => {
                                 </Row>
 
                                 {analisisItems.length > 0 && (
-                                    <Table size="sm" bordered>
+                                    <Table size="sm" className="mb-4">
                                         <thead><tr><th>Análisis</th><th>Indicaciones</th></tr></thead>
                                         <tbody>
                                             {analisisItems.map((item, idx) => (
@@ -294,13 +288,13 @@ const AtencionMedica = () => {
                 </Col>
             </Row>
 
-            {/* Modal de Confirmación para Finalizar Atención */}
+            {/* Modal de Confirmación */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Confirmar Acción Crítica</Modal.Title>
+                    <Modal.Title>Confirmar Acción</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    ¿Está seguro de procesar esta acción crítica? Los datos se guardarán permanentemente en el sistema.
+                    ¿Está seguro de procesar esta acción? Los datos se guardarán permanentemente en el sistema.
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)} aria-label="Cerrar modal de confirmación">

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
 import { Container, Card, Form, Button, Alert, Row, Col } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import { FaWeight, FaRulerVertical, FaSearch, FaUserNurse } from 'react-icons/fa';
 
 const calcularEdad = (fecha) => {
     if (!fecha) return 'N/A';
@@ -18,30 +17,25 @@ const TriajePage = () => {
     const [paciente, setPaciente] = useState(null);
     const [historia, setHistoria] = useState(null);
     
-    // Datos a actualizar
     const [peso, setPeso] = useState('');
     const [talla, setTalla] = useState('');
 
     const [pacienteNoEncontrado, setPacienteNoEncontrado] = useState(false);
 
-    // 1. BUSCAR PACIENTE
     const buscarPaciente = async (e) => {
         e.preventDefault();
         setPacienteNoEncontrado(false);
         try {
-            // Buscar datos personales
             const resPac = await api.get(`/paciente/buscar/${dni}`);
             setPaciente(resPac.data);
             
-            // Buscar historia existente (si tiene)
             try {
                 const resHist = await api.get(`/historia/paciente/${resPac.data.idPaciente}`);
                 setHistoria(resHist.data);
-                // Pre-llenar datos si ya existen
                 setPeso(resHist.data.peso || '');
                 setTalla(resHist.data.talla || '');
             } catch (err) {
-                setHistoria(null); // No tiene historia aún
+                setHistoria(null);
                 setPeso('');
                 setTalla('');
             }
@@ -52,7 +46,6 @@ const TriajePage = () => {
         }
     };
 
-    // 2. GUARDAR TRIAJE
     const guardarTriaje = async () => {
         if (!paciente) return;
 
@@ -64,10 +57,8 @@ const TriajePage = () => {
         };
 
         try {
-            // Usamos el endpoint de registrar (que funciona como crear o actualizar en tu lógica simple)
             await api.post('/historia/registrar', payload);
-            toast.success(`✅ Triaje guardado para ${paciente.nombre}`);
-            // Limpiar
+            toast.success(`Triaje guardado para ${paciente.nombre}`);
             setPaciente(null);
             setDni('');
         } catch (error) {
@@ -77,20 +68,25 @@ const TriajePage = () => {
     };
 
     return (
-        <Container className="mt-4">
-            <h2 className="text-info mb-4"><FaUserNurse/> Estación de Triaje</h2>
+        <Container className="p-0">
+            <div className="page-header">
+                <h2>Estación de Triaje</h2>
+                <p>Registro de signos vitales y datos antropométricos.</p>
+            </div>
 
-            <Row>
+            <Row className="g-3">
                 <Col md={5}>
-                    <Card className="shadow-sm mb-4">
-                        <Card.Header className="bg-info text-white">1. Buscar Paciente</Card.Header>
+                    <Card className="border-0 mb-4">
+                        <Card.Header>
+                            <h5 className="mb-0">1. Buscar Paciente</h5>
+                        </Card.Header>
                         <Card.Body>
                             <Form onSubmit={buscarPaciente} className="d-flex gap-2">
                                 <Form.Control 
                                     placeholder="Ingrese DNI" 
                                     value={dni} onChange={e => setDni(e.target.value)} 
                                 />
-                                <Button type="submit" variant="outline-info"><FaSearch/></Button>
+                                <Button type="submit" variant="outline-primary" aria-label="Buscar paciente por DNI">Buscar</Button>
                             </Form>
 
                             {paciente && (
@@ -113,13 +109,15 @@ const TriajePage = () => {
                 </Col>
 
                 <Col md={7}>
-                    <Card className="shadow-sm">
-                        <Card.Header className="bg-secondary text-white">2. Signos Vitales</Card.Header>
+                    <Card className="border-0">
+                        <Card.Header>
+                            <h5 className="mb-0">2. Signos Vitales</h5>
+                        </Card.Header>
                         <Card.Body>
                             <Form>
                                 <Row className="mb-3">
                                     <Col>
-                                        <Form.Label><FaWeight/> Peso (kg)</Form.Label>
+                                        <Form.Label>Peso (kg)</Form.Label>
                                         <Form.Control 
                                             disabled={!paciente}
                                             value={peso} onChange={e => setPeso(e.target.value)} 
@@ -127,7 +125,7 @@ const TriajePage = () => {
                                         />
                                     </Col>
                                     <Col>
-                                        <Form.Label><FaRulerVertical/> Talla (m)</Form.Label>
+                                        <Form.Label>Talla (m)</Form.Label>
                                         <Form.Control 
                                             disabled={!paciente}
                                             value={talla} onChange={e => setTalla(e.target.value)} 

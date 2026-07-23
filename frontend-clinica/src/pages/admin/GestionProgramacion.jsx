@@ -104,10 +104,12 @@ const GestionProgramacion = () => {
     };
 
     return (
-        <Container fluid className="p-4">
-            <h2 className="mb-4">🏥 Gestión de Infraestructura</h2>
+        <Container fluid className="p-0">
+            <div className="page-header">
+                <h2>Gestión de Infraestructura</h2>
+            </div>
 
-            <div className="card-modern p-4 mb-4 shadow-sm bg-white rounded">
+            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', padding: 'var(--space-lg)' }}>
                 <Tabs defaultActiveKey="horarios" className="mb-4">
                     
                     {/* TAB 1: ASIGNAR HORARIOS */}
@@ -152,7 +154,7 @@ const GestionProgramacion = () => {
                                     </Col>
                                 </Row>
                                 <div className="d-flex justify-content-end mt-3">
-                                    <Button type="submit" className="btn-primary-modern px-4" aria-label="Guardar programación del turno médico">
+                                    <Button type="submit" variant="primary" className="px-4" aria-label="Guardar programación del turno médico">
                                         Guardar Programación
                                     </Button>
                                 </div>
@@ -218,7 +220,7 @@ const GestionProgramacion = () => {
                                                 aria-label="Nombre o número del nuevo consultorio"
                                             />
                                         </Form.Group>
-                                        <Button type="submit" className="btn-primary-modern w-100" aria-label="Registrar nuevo consultorio">
+                                        <Button type="submit" variant="primary" size="sm" className="w-100" aria-label="Registrar nuevo consultorio">
                                             Crear
                                         </Button>
                                     </Form>

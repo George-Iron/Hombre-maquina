@@ -5,17 +5,15 @@ import { toast } from 'react-toastify';
 
 const GestionPersonal = () => {
     const [empleados, setEmpleados] = useState([]);
-    const [rolSeleccionado, setRolSeleccionado] = useState('DOCTOR'); // Tab activo
+    const [rolSeleccionado, setRolSeleccionado] = useState('DOCTOR');
     const [showModal, setShowModal] = useState(false);
 
-    // Estado del Formulario
     const [nuevoEmpleado, setNuevoEmpleado] = useState({
         nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
     });
 
     const [errors, setErrors] = useState({});
 
-    // Cargar empleados cuando cambia el tab
     useEffect(() => {
         cargarEmpleados();
     }, [rolSeleccionado]);
@@ -26,7 +24,7 @@ const GestionPersonal = () => {
             setEmpleados(response.data);
         } catch (error) {
             console.error(error);
-            setEmpleados([]); // Limpiar si error
+            setEmpleados([]);
         }
     };
 
@@ -61,7 +59,6 @@ const GestionPersonal = () => {
         return errorMsg;
     };
 
-    // Manejar inputs del formulario
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newValue = value;
@@ -84,7 +81,7 @@ const GestionPersonal = () => {
         if (window.confirm("¿Está seguro de que desea eliminar a este empleado?")) {
             try {
                 await api.delete(`/personal/eliminar/${id}`);
-                toast.success("¡Personal eliminado con éxito!");
+                toast.success("Personal eliminado con éxito.");
                 cargarEmpleados();
             } catch (error) {
                 toast.error("Error al eliminar al personal.");
@@ -93,11 +90,9 @@ const GestionPersonal = () => {
         }
     };
 
-    // Guardar Empleado
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Validar todos los campos antes de enviar
         const fieldsToValidate = ['dni', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono', 'correo', 'contraseña'];
         let formIsValid = true;
         const newErrors = {};
@@ -155,16 +150,15 @@ const GestionPersonal = () => {
         
         try {
             await api.post('/personal/registrar', payload);
-            // Sincronizar credenciales con Seguridad-Server
             await api.post('/security/registerAsistente', { dni: payload.dni, password: payload.contraseña });
             
-            toast.success("¡Personal registrado con éxito!");
+            toast.success("Personal registrado con éxito.");
             setShowModal(false);
             setNuevoEmpleado({
                 nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
-            }); // Reset
+            });
             setErrors({});
-            cargarEmpleados(); // Recargar lista
+            cargarEmpleados();
         } catch (error) {
             toast.error("Error al registrar. Verifique el DNI y correo.");
             console.error(error);
@@ -172,68 +166,69 @@ const GestionPersonal = () => {
     };
 
     return (
-        <Container fluid className="p-4">
-            <h2 className="mb-4">Gestión de Personal</h2>
+        <Container fluid className="p-0">
+            <div className="page-header">
+                <h2>Gestión de Personal</h2>
+            </div>
 
-            <div className="card-modern p-4 mb-4 shadow-sm bg-white rounded">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h4 className="mb-0">Listado de Empleados</h4>
-                    <Button className="btn-primary-modern" onClick={() => setShowModal(true)}>
+            <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0 }}>Listado de Empleados</h4>
+                    <Button className="btn-primary" size="sm" onClick={() => setShowModal(true)}>
                         + Nuevo {rolSeleccionado}
                     </Button>
                 </div>
 
-                {/* SECCIÓN DE TABS ACTUALIZADA */}
-                <Tabs
-                    id="roles-tab"
-                    activeKey={rolSeleccionado}
-                    onSelect={(k) => setRolSeleccionado(k)}
-                    className="mb-4"
-                >
-                    <Tab eventKey="DOCTOR" title="Doctores" />
-                    
-                    {/* --- AGREGADO AQUÍ --- */}
-                    <Tab eventKey="ENFERMERA" title="Enfermería" />
+                <div style={{ padding: '0 var(--space-lg)' }}>
+                    <Tabs
+                        id="roles-tab"
+                        activeKey={rolSeleccionado}
+                        onSelect={(k) => setRolSeleccionado(k)}
+                        className="mb-0"
+                    >
+                        <Tab eventKey="DOCTOR" title="Doctores" />
+                        <Tab eventKey="ENFERMERA" title="Enfermería" />
+                        <Tab eventKey="RECEPCIONISTA" title="Recepción" />
+                        <Tab eventKey="CAJERO" title="Cajeros" />
+                        <Tab eventKey="ADMIN" title="Administradores" />
+                    </Tabs>
+                </div>
 
-                    <Tab eventKey="RECEPCIONISTA" title="Recepción" />
-                    <Tab eventKey="CAJERO" title="Cajeros" />
-                    <Tab eventKey="ADMIN" title="Administradores" />
-                </Tabs>
-
-                <Table hover responsive className="align-middle">
-                    <thead className="bg-light">
-                        <tr>
-                            <th className="border-0 text-secondary">ID</th>
-                            <th className="border-0 text-secondary">DNI</th>
-                            <th className="border-0 text-secondary">Nombre Completo</th>
-                            {/* Solo los doctores muestran especialidad */}
-                            {rolSeleccionado === 'DOCTOR' && <th className="border-0 text-secondary">Especialidad</th>}
-                            <th className="border-0 text-secondary">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {empleados.map((emp) => (
-                            <tr key={emp.idEmpleado}>
-                                <td>{emp.idEmpleado}</td>
-                                <td>{emp.dni}</td>
-                                <td className="fw-bold">{emp.nombre} {emp.apellido}</td>
-                                {rolSeleccionado === 'DOCTOR' && (
-                                    <td><Badge bg="info" className="fw-normal">{emp.especialidad}</Badge></td>
-                                )}
-                                <td>
-                                    <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(emp.idEmpleado)}>Eliminar</Button>
-                                </td>
-                            </tr>
-                        ))}
-                        {empleados.length === 0 && (
+                <div className="table-scroll">
+                    <Table hover responsive className="align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td colSpan={rolSeleccionado === 'DOCTOR' ? 5 : 4} className="text-center py-4 text-muted">
-                                    No hay registros en esta categoría
-                                </td>
+                                <th>ID</th>
+                                <th>DNI</th>
+                                <th>Nombre Completo</th>
+                                {rolSeleccionado === 'DOCTOR' && <th>Especialidad</th>}
+                                <th>Acciones</th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {empleados.map((emp) => (
+                                <tr key={emp.idEmpleado}>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{emp.idEmpleado}</td>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{emp.dni}</td>
+                                    <td style={{ fontWeight: 500 }}>{emp.nombre} {emp.apellido}</td>
+                                    {rolSeleccionado === 'DOCTOR' && (
+                                        <td><Badge bg="info">{emp.especialidad}</Badge></td>
+                                    )}
+                                    <td>
+                                        <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(emp.idEmpleado)}>Eliminar</Button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {empleados.length === 0 && (
+                                <tr>
+                                    <td colSpan={rolSeleccionado === 'DOCTOR' ? 5 : 4} className="text-center py-4 text-muted">
+                                        No hay registros en esta categoría
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
             </div>
 
             {/* MODAL DE REGISTRO */}
@@ -347,7 +342,6 @@ const GestionPersonal = () => {
                             </Form.Control.Feedback>
                         </Form.Group>
 
-                        {/* La especialidad seguirá apareciendo SOLO si es DOCTOR */}
                         {rolSeleccionado === 'DOCTOR' && (
                             <Form.Group className="mb-3">
                                 <Form.Label>Especialidad</Form.Label>
@@ -366,7 +360,7 @@ const GestionPersonal = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
-                            <Button className="btn-primary-modern" type="submit">Guardar</Button>
+                            <Button variant="primary" type="submit">Guardar</Button>
                         </div>
                     </Form>
                 </Modal.Body>
