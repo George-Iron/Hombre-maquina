@@ -21,9 +21,41 @@ const TriajePage = () => {
     const [talla, setTalla] = useState('');
 
     const [pacienteNoEncontrado, setPacienteNoEncontrado] = useState(false);
+    const [touched, setTouched] = useState({ peso: false, talla: false });
+
+    // Validaciones fisiológicas lógicas
+    const pesoNum = parseFloat(peso);
+    const tallaNum = parseFloat(talla);
+    const isPesoValido = !isNaN(pesoNum) && pesoNum >= 0.5 && pesoNum <= 400.0;
+    const isTallaValida = !isNaN(tallaNum) && tallaNum >= 0.30 && tallaNum <= 2.50;
+    const isTriajeValido = paciente && isPesoValido && isTallaValida;
+    const isDniSearchValid = /^\d{8}$/.test(dni);
+
+    const handleDniChange = (e) => {
+        const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+        setDni(val);
+    };
+
+    const handlePesoChange = (e) => {
+        const val = e.target.value;
+        if (/^\d*\.?\d*$/.test(val)) {
+            setPeso(val);
+        }
+    };
+
+    const handleTallaChange = (e) => {
+        const val = e.target.value;
+        if (/^\d*\.?\d*$/.test(val)) {
+            setTalla(val);
+        }
+    };
 
     const buscarPaciente = async (e) => {
         e.preventDefault();
+        if (!isDniSearchValid) {
+            toast.error("Ingrese un DNI válido de 8 dígitos.");
+            return;
+        }
         setPacienteNoEncontrado(false);
         try {
             const resPac = await api.get(`/paciente/buscar/${dni}`);
@@ -40,29 +72,35 @@ const TriajePage = () => {
                 setTalla('');
             }
         } catch (error) {
-            toast.error("Paciente no encontrado");
+            toast.error("Paciente no encontrado en la base de datos.");
             setPaciente(null);
             setPacienteNoEncontrado(true);
         }
     };
 
     const guardarTriaje = async () => {
-        if (!paciente) return;
+        if (!isTriajeValido) {
+            toast.error("Verifique que el peso (0.5-400 kg) y la talla (0.3-2.5 m) sean válidos.");
+            return;
+        }
 
         const payload = {
             idPaciente: paciente.idPaciente,
-            peso: peso,
-            talla: talla,
+            peso: String(pesoNum),
+            talla: String(tallaNum),
             estado: "ACTIVO"
         };
 
         try {
             await api.post('/historia/registrar', payload);
-            toast.success(`Triaje guardado para ${paciente.nombre}`);
+            toast.success(`Triaje guardado exitosamente para ${paciente.nombre}.`);
             setPaciente(null);
             setDni('');
+            setPeso('');
+            setTalla('');
+            setTouched({ peso: false, talla: false });
         } catch (error) {
-            toast.error("Error al guardar historia");
+            toast.error("Error al guardar la historia clínica.");
             console.error(error);
         }
     };
@@ -71,7 +109,7 @@ const TriajePage = () => {
         <Container className="p-0">
             <div className="page-header">
                 <h2>Estación de Triaje</h2>
-                <p>Registro de signos vitales y datos antropométricos.</p>
+                <p>Registro de signos vitales y datos antropométricos del paciente.</p>
             </div>
 
             <Row className="g-3">
@@ -81,13 +119,22 @@ const TriajePage = () => {
                             <h5 className="mb-0">1. Buscar Paciente</h5>
                         </Card.Header>
                         <Card.Body>
-                            <Form onSubmit={buscarPaciente} className="d-flex gap-2">
+                            <Form onSubmit={buscarPaciente} className="d-flex gap-2" noValidate>
                                 <Form.Control 
-                                    placeholder="Ingrese DNI" 
-                                    value={dni} onChange={e => setDni(e.target.value)} 
+                                    placeholder="Ingrese DNI (8 dígitos)" 
+                                    value={dni} 
+                                    maxLength={8}
+                                    inputMode="numeric"
+                                    onChange={handleDniChange} 
+                                    isInvalid={dni.length > 0 && !isDniSearchValid}
                                 />
-                                <Button type="submit" variant="outline-primary" aria-label="Buscar paciente por DNI">Buscar</Button>
+                                <Button type="submit" variant="outline-primary" disabled={!isDniSearchValid} aria-label="Buscar paciente por DNI">Buscar</Button>
                             </Form>
+                            {dni.length > 0 && !isDniSearchValid && (
+                                <small style={{ color: 'var(--semantic-danger)', marginTop: '4px', display: 'block' }}>
+                                    El DNI debe tener 8 dígitos numéricos.
+                                </small>
+                            )}
 
                             {paciente && (
                                 <Alert variant="success" className="mt-3 mb-0">
@@ -114,29 +161,45 @@ const TriajePage = () => {
                             <h5 className="mb-0">2. Signos Vitales</h5>
                         </Card.Header>
                         <Card.Body>
-                            <Form>
+                            <Form noValidate>
                                 <Row className="mb-3">
                                     <Col>
                                         <Form.Label>Peso (kg)</Form.Label>
                                         <Form.Control 
                                             disabled={!paciente}
-                                            value={peso} onChange={e => setPeso(e.target.value)} 
+                                            value={peso} 
+                                            onChange={handlePesoChange} 
+                                            onBlur={() => setTouched(prev => ({ ...prev, peso: true }))}
                                             placeholder="Ej: 70.5"
+                                            isInvalid={touched.peso && !isPesoValido}
                                         />
+                                        {touched.peso && !isPesoValido && (
+                                            <Form.Control.Feedback type="invalid">
+                                                Ingrese un peso válido entre 0.5 y 400.0 kg.
+                                            </Form.Control.Feedback>
+                                        )}
                                     </Col>
                                     <Col>
                                         <Form.Label>Talla (m)</Form.Label>
                                         <Form.Control 
                                             disabled={!paciente}
-                                            value={talla} onChange={e => setTalla(e.target.value)} 
+                                            value={talla} 
+                                            onChange={handleTallaChange} 
+                                            onBlur={() => setTouched(prev => ({ ...prev, talla: true }))}
                                             placeholder="Ej: 1.75"
+                                            isInvalid={touched.talla && !isTallaValida}
                                         />
+                                        {touched.talla && !isTallaValida && (
+                                            <Form.Control.Feedback type="invalid">
+                                                Ingrese una talla válida entre 0.30 y 2.50 m.
+                                            </Form.Control.Feedback>
+                                        )}
                                     </Col>
                                 </Row>
                                 <Button 
                                     className="w-100" 
                                     variant="success" 
-                                    disabled={!paciente}
+                                    disabled={!isTriajeValido}
                                     onClick={guardarTriaje}
                                 >
                                     Actualizar Historia Clínica

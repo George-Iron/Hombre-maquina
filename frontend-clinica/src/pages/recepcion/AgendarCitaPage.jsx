@@ -17,18 +17,33 @@ const AgendarCitaPage = () => {
         documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
     });
     const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
 
     // --- ESTADOS PROGRAMACIÓN ---
     const [especialidad, setEspecialidad] = useState('');
     const [horarios, setHorarios] = useState([]);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const isDniSearchValid = /^\d{8}$/.test(dniBusqueda);
+
+    const isFormPacienteValid = () => {
+        const isDoc = /^\d{8}$/.test(formPaciente.documento);
+        const isNom = formPaciente.nombre.trim().length > 0;
+        const isPat = formPaciente.apellidoPaterno.trim().length >= 2;
+        const isMat = formPaciente.apellidoMaterno.trim().length >= 2;
+        const isTel = /^\d{9}$/.test(formPaciente.telefono);
+        const isFecha = formPaciente.fechaNac && formPaciente.fechaNac <= todayStr && formPaciente.fechaNac >= '1900-01-01';
+        return isDoc && isNom && isPat && isMat && isTel && isFecha;
+    };
+
     // 1. BUSCAR PACIENTE
     const buscarPaciente = async () => {
-        if(!dniBusqueda) return toast.warning("Ingrese un DNI");
+        if (!isDniSearchValid) return toast.warning("Ingrese un DNI válido de 8 dígitos.");
         try {
             const res = await api.get(`/paciente/buscar/${dniBusqueda}`);
             setPacienteEncontrado(res.data);
-            toast.success("Paciente encontrado");
+            toast.success("Paciente encontrado.");
         } catch (error) {
             setPacienteEncontrado(null);
             toast.info("Paciente no encontrado. Puede registrarlo ahora.");
@@ -39,20 +54,24 @@ const AgendarCitaPage = () => {
     const validatePacienteField = (name, value) => {
         let errorMsg = '';
         if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
-            if (value.length < 2 || value.length > 50) {
-                errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+            if (value.trim().length < 2 || value.trim().length > 50) {
+                errorMsg = "El apellido debe tener entre 2 y 50 caracteres.";
             }
         } else if (name === 'documento') {
             if (!/^\d{8}$/.test(value)) {
-                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos.";
             }
         } else if (name === 'telefono') {
             if (!/^\d{9}$/.test(value)) {
-                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos.";
             }
         } else if (name === 'nombre') {
             if (value.trim().length === 0) {
-                errorMsg = "El nombre es requerido";
+                errorMsg = "El nombre es requerido.";
+            }
+        } else if (name === 'fechaNac') {
+            if (!value || value > todayStr || value < '1900-01-01') {
+                errorMsg = "La fecha de nacimiento debe ser válida y no puede ser futura.";
             }
         }
         setErrors(prev => ({ ...prev, [name]: errorMsg }));
@@ -65,53 +84,22 @@ const AgendarCitaPage = () => {
             documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
         });
         setErrors({});
+        setTouched({});
     };
 
     // 2. REGISTRAR PACIENTE NUEVO (MODAL)
     const handleRegistrarPaciente = async (e) => {
         e.preventDefault();
         
-        const fieldsToValidate = ['documento', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono'];
-        let formIsValid = true;
-        const newErrors = {};
-        
-        fieldsToValidate.forEach(field => {
-            let value = formPaciente[field] || '';
-            let errorMsg = '';
-            if (field === 'apellidoPaterno' || field === 'apellidoMaterno') {
-                if (value.length < 2 || value.length > 50) {
-                    errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
-                }
-            } else if (field === 'documento') {
-                if (!/^\d{8}$/.test(value)) {
-                    errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
-                }
-            } else if (field === 'telefono') {
-                if (!/^\d{9}$/.test(value)) {
-                    errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
-                }
-            } else if (field === 'nombre') {
-                if (value.trim().length === 0) {
-                    errorMsg = "El nombre es requerido";
-                }
-            }
-            if (errorMsg) {
-                newErrors[field] = errorMsg;
-                formIsValid = false;
-            }
-        });
-        
-        setErrors(newErrors);
-        
-        if (!formIsValid) {
-            toast.error("Por favor, corrija los errores en el formulario.");
+        if (!isFormPacienteValid()) {
+            toast.error("Por favor, corrija los campos marcados antes de registrar.");
             return;
         }
 
         const payload = {
             documento: formPaciente.documento,
-            nombre: formPaciente.nombre,
-            apellido: `${formPaciente.apellidoPaterno} ${formPaciente.apellidoMaterno}`,
+            nombre: formPaciente.nombre.trim(),
+            apellido: `${formPaciente.apellidoPaterno.trim()} ${formPaciente.apellidoMaterno.trim()}`,
             fechaNac: formPaciente.fechaNac,
             telefono: formPaciente.telefono
         };
@@ -119,12 +107,8 @@ const AgendarCitaPage = () => {
         try {
             const res = await api.post('/paciente/registrar', payload);
             setPacienteEncontrado(res.data);
-            setShowModal(false);
-            setFormPaciente({
-                documento: '', nombre: '', apellidoPaterno: '', apellidoMaterno: '', fechaNac: '', telefono: ''
-            });
-            setErrors({});
-            toast.success("Paciente registrado y seleccionado.");
+            handleCloseModal();
+            toast.success("Paciente registrado y seleccionado con éxito.");
         } catch (error) {
             toast.error("Error al registrar paciente.");
             console.error(error);
@@ -133,7 +117,7 @@ const AgendarCitaPage = () => {
     
     // 3. BUSCAR HORARIOS
     const buscarHorarios = async () => {
-        if(!especialidad) return;
+        if(!especialidad) return toast.warning("Seleccione una especialidad primero.");
         try {
             const res = await api.get(`/programacion/horario/disponibles?especialidad=${especialidad}`);
             setHorarios(res.data);
@@ -152,7 +136,7 @@ const AgendarCitaPage = () => {
 
         try {
             await api.post('/cita/registrar', payload);
-            toast.success("Cita Agendada Exitosamente.");
+            toast.success("Cita agendada exitosamente.");
             buscarHorarios();
         } catch (error) {
             toast.error("Error al agendar la cita.");
@@ -177,16 +161,24 @@ const AgendarCitaPage = () => {
                         <Card.Body>
                             <div className="input-group mb-3">
                                 <Form.Control 
-                                    placeholder="Ingrese DNI" 
+                                    placeholder="Ingrese DNI (8 dígitos)" 
                                     value={dniBusqueda} 
-                                    onChange={e => setDniBusqueda(e.target.value)}
+                                    maxLength={8}
+                                    inputMode="numeric"
+                                    onChange={e => setDniBusqueda(e.target.value.replace(/\D/g, '').slice(0, 8))}
                                     onKeyPress={e => e.key === 'Enter' && buscarPaciente()}
+                                    isInvalid={dniBusqueda.length > 0 && !isDniSearchValid}
                                     aria-label="Ingresar DNI del Paciente para buscar"
                                 />
-                                <Button variant="outline-primary" onClick={buscarPaciente} aria-label="Buscar paciente por DNI">
+                                <Button variant="outline-primary" disabled={!isDniSearchValid} onClick={buscarPaciente} aria-label="Buscar paciente por DNI">
                                     Buscar
                                 </Button>
                             </div>
+                            {dniBusqueda.length > 0 && !isDniSearchValid && (
+                                <small style={{ color: 'var(--semantic-danger)', marginTop: '-8px', marginBottom: '12px', display: 'block' }}>
+                                    El DNI debe tener 8 dígitos numéricos.
+                                </small>
+                            )}
 
                             {pacienteEncontrado ? (
                                 <Alert variant="success" className="text-center">
@@ -226,7 +218,7 @@ const AgendarCitaPage = () => {
                                     <option value="General">Medicina General</option>
                                     <option value="Dermatologia">Dermatología</option>
                                 </Form.Select>
-                                <Button onClick={buscarHorarios} variant="primary" size="sm" style={{ whiteSpace: 'nowrap' }} aria-label="Buscar horarios de turnos disponibles">Buscar Disponibles</Button>
+                                <Button onClick={buscarHorarios} variant="primary" size="sm" disabled={!especialidad} style={{ whiteSpace: 'nowrap' }} aria-label="Buscar horarios de turnos disponibles">Buscar Disponibles</Button>
                             </div>
 
                             <div className="table-scroll">
@@ -276,16 +268,18 @@ const AgendarCitaPage = () => {
                         <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
-                                    <Form.Label>DNI / Documento</Form.Label>
+                                    <Form.Label>DNI / Documento (8 dígitos)</Form.Label>
                                     <Form.Control required 
                                         maxLength="8"
+                                        inputMode="numeric"
                                         value={formPaciente.documento} 
                                         onChange={e => {
-                                            const val = e.target.value.replace(/\D/g, '');
+                                            const val = e.target.value.replace(/\D/g, '').slice(0, 8);
                                             setFormPaciente({...formPaciente, documento: val});
+                                            setTouched({...touched, documento: true});
                                             validatePacienteField('documento', val);
                                         }} 
-                                        isInvalid={!!errors.documento}
+                                        isInvalid={touched.documento && !!errors.documento}
                                         aria-label="Ingresar DNI o Documento de Identidad del nuevo paciente"
                                     />
                                     <Form.Control.Feedback type="invalid">
@@ -296,11 +290,24 @@ const AgendarCitaPage = () => {
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Fecha Nacimiento</Form.Label>
-                                    <Form.Control type="date" required 
+                                    <Form.Control 
+                                        type="date" 
+                                        required 
+                                        max={todayStr}
+                                        min="1900-01-01"
                                         value={formPaciente.fechaNac} 
-                                        onChange={e => setFormPaciente({...formPaciente, fechaNac: e.target.value})} 
+                                        onChange={e => {
+                                            const val = e.target.value;
+                                            setFormPaciente({...formPaciente, fechaNac: val});
+                                            setTouched({...touched, fechaNac: true});
+                                            validatePacienteField('fechaNac', val);
+                                        }} 
+                                        isInvalid={touched.fechaNac && !!errors.fechaNac}
                                         aria-label="Ingresar fecha de nacimiento del nuevo paciente"
                                     />
+                                    <Form.Control.Feedback type="invalid">
+                                        {errors.fechaNac}
+                                    </Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -312,9 +319,10 @@ const AgendarCitaPage = () => {
                                 onChange={e => {
                                     const val = e.target.value;
                                     setFormPaciente({...formPaciente, nombre: val});
+                                    setTouched({...touched, nombre: true});
                                     validatePacienteField('nombre', val);
                                 }} 
-                                isInvalid={!!errors.nombre}
+                                isInvalid={touched.nombre && !!errors.nombre}
                                 aria-label="Ingresar nombres del nuevo paciente"
                             />
                             <Form.Control.Feedback type="invalid">
@@ -332,9 +340,10 @@ const AgendarCitaPage = () => {
                                         onChange={e => {
                                             const val = e.target.value;
                                             setFormPaciente({...formPaciente, apellidoPaterno: val});
+                                            setTouched({...touched, apellidoPaterno: true});
                                             validatePacienteField('apellidoPaterno', val);
                                         }} 
-                                        isInvalid={!!errors.apellidoPaterno}
+                                        isInvalid={touched.apellidoPaterno && !!errors.apellidoPaterno}
                                         aria-label="Ingresar apellido paterno del nuevo paciente"
                                     />
                                     <Form.Control.Feedback type="invalid">
@@ -351,9 +360,10 @@ const AgendarCitaPage = () => {
                                         onChange={e => {
                                             const val = e.target.value;
                                             setFormPaciente({...formPaciente, apellidoMaterno: val});
+                                            setTouched({...touched, apellidoMaterno: true});
                                             validatePacienteField('apellidoMaterno', val);
                                         }} 
-                                        isInvalid={!!errors.apellidoMaterno}
+                                        isInvalid={touched.apellidoMaterno && !!errors.apellidoMaterno}
                                         aria-label="Ingresar apellido materno del nuevo paciente"
                                     />
                                     <Form.Control.Feedback type="invalid">
@@ -364,16 +374,18 @@ const AgendarCitaPage = () => {
                         </Row>
 
                         <Form.Group className="mb-3">
-                            <Form.Label>Teléfono</Form.Label>
+                            <Form.Label>Teléfono (9 dígitos)</Form.Label>
                             <Form.Control placeholder="999..." required 
                                 maxLength="9"
+                                inputMode="numeric"
                                 value={formPaciente.telefono} 
                                 onChange={e => {
-                                    const val = e.target.value.replace(/\D/g, '');
+                                    const val = e.target.value.replace(/\D/g, '').slice(0, 9);
                                     setFormPaciente({...formPaciente, telefono: val});
+                                    setTouched({...touched, telefono: true});
                                     validatePacienteField('telefono', val);
                                 }} 
-                                isInvalid={!!errors.telefono}
+                                isInvalid={touched.telefono && !!errors.telefono}
                                 aria-label="Ingresar teléfono del nuevo paciente"
                             />
                             <Form.Control.Feedback type="invalid">
@@ -383,7 +395,7 @@ const AgendarCitaPage = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="secondary" onClick={handleCloseModal} aria-label="Cerrar registro de paciente">Cancelar</Button>
-                            <Button type="submit" variant="primary" aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
+                            <Button type="submit" variant="primary" disabled={!isFormPacienteValid()} aria-label="Guardar y seleccionar paciente registrado">Guardar y Seleccionar</Button>
                         </div>
                     </Form>
                 </Modal.Body>

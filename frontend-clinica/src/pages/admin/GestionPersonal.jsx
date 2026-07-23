@@ -13,6 +13,7 @@ const GestionPersonal = () => {
     });
 
     const [errors, setErrors] = useState({});
+    const [touched, setTouched] = useState({});
 
     useEffect(() => {
         cargarEmpleados();
@@ -31,41 +32,60 @@ const GestionPersonal = () => {
     const validateField = (name, value) => {
         let errorMsg = '';
         if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
-            if (value.length < 2 || value.length > 50) {
-                errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
+            if (value.trim().length < 2 || value.trim().length > 50) {
+                errorMsg = "El apellido debe tener entre 2 y 50 caracteres.";
             }
         } else if (name === 'dni') {
             if (!/^\d{8}$/.test(value)) {
-                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
+                errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos.";
             }
         } else if (name === 'telefono') {
             if (!/^\d{9}$/.test(value)) {
-                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
+                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos.";
             }
         } else if (name === 'nombre') {
             if (value.trim().length === 0) {
-                errorMsg = "El nombre es requerido";
+                errorMsg = "El nombre es requerido.";
             }
         } else if (name === 'correo') {
             if (!/\S+@\S+\.\S+/.test(value)) {
-                errorMsg = "El correo no es válido";
+                errorMsg = "Ingrese un correo electrónico válido.";
             }
         } else if (name === 'contraseña') {
             if (value.length < 4) {
-                errorMsg = "La contraseña debe tener al menos 4 caracteres";
+                errorMsg = "La contraseña debe tener al menos 4 caracteres.";
+            }
+        } else if (name === 'especialidad' && rolSeleccionado === 'DOCTOR') {
+            if (!value) {
+                errorMsg = "Debe seleccionar una especialidad médica.";
             }
         }
         setErrors(prev => ({ ...prev, [name]: errorMsg }));
         return errorMsg;
     };
 
+    const isFormValid = () => {
+        const isDni = /^\d{8}$/.test(nuevoEmpleado.dni);
+        const isNombre = nuevoEmpleado.nombre.trim().length > 0;
+        const isPaterno = nuevoEmpleado.apellidoPaterno.trim().length >= 2;
+        const isMaterno = nuevoEmpleado.apellidoMaterno.trim().length >= 2;
+        const isTel = /^\d{9}$/.test(nuevoEmpleado.telefono);
+        const isCorreo = /\S+@\S+\.\S+/.test(nuevoEmpleado.correo);
+        const isPass = nuevoEmpleado.contraseña.length >= 4;
+        const isEsp = rolSeleccionado !== 'DOCTOR' || !!nuevoEmpleado.especialidad;
+        return isDni && isNombre && isPaterno && isMaterno && isTel && isCorreo && isPass && isEsp;
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newValue = value;
-        if (name === 'dni' || name === 'telefono') {
-            newValue = value.replace(/\D/g, '');
+        if (name === 'dni') {
+            newValue = value.replace(/\D/g, '').slice(0, 8);
+        } else if (name === 'telefono') {
+            newValue = value.replace(/\D/g, '').slice(0, 9);
         }
         setNuevoEmpleado(prev => ({ ...prev, [name]: newValue }));
+        setTouched(prev => ({ ...prev, [name]: true }));
         validateField(name, newValue);
     };
 
@@ -75,6 +95,7 @@ const GestionPersonal = () => {
             nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
         });
         setErrors({});
+        setTouched({});
     };
 
     const handleEliminar = async (id) => {
@@ -93,56 +114,16 @@ const GestionPersonal = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        const fieldsToValidate = ['dni', 'nombre', 'apellidoPaterno', 'apellidoMaterno', 'telefono', 'correo', 'contraseña'];
-        let formIsValid = true;
-        const newErrors = {};
-        
-        fieldsToValidate.forEach(field => {
-            let value = nuevoEmpleado[field] || '';
-            let errorMsg = '';
-            if (field === 'apellidoPaterno' || field === 'apellidoMaterno') {
-                if (value.length < 2 || value.length > 50) {
-                    errorMsg = "El apellido debe tener entre 2 y 50 caracteres";
-                }
-            } else if (field === 'dni') {
-                if (!/^\d{8}$/.test(value)) {
-                    errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos";
-                }
-            } else if (field === 'telefono') {
-                if (!/^\d{9}$/.test(value)) {
-                    errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos";
-                }
-            } else if (field === 'nombre') {
-                if (value.trim().length === 0) {
-                    errorMsg = "El nombre es requerido";
-                }
-            } else if (field === 'correo') {
-                if (!/\S+@\S+\.\S+/.test(value)) {
-                    errorMsg = "El correo no es válido";
-                }
-            } else if (field === 'contraseña') {
-                if (value.length < 4) {
-                    errorMsg = "La contraseña debe tener al menos 4 caracteres";
-                }
-            }
-            if (errorMsg) {
-                newErrors[field] = errorMsg;
-                formIsValid = false;
-            }
-        });
-        
-        setErrors(newErrors);
-        
-        if (!formIsValid) {
-            toast.error("Por favor, corrija los errores en el formulario.");
+        if (!isFormValid()) {
+            toast.error("Por favor, corrija los campos marcados antes de guardar.");
             return;
         }
-        
+
         const payload = {
-            nombre: nuevoEmpleado.nombre,
-            apellido: `${nuevoEmpleado.apellidoPaterno} ${nuevoEmpleado.apellidoMaterno}`,
+            nombre: nuevoEmpleado.nombre.trim(),
+            apellido: `${nuevoEmpleado.apellidoPaterno.trim()} ${nuevoEmpleado.apellidoMaterno.trim()}`,
             dni: nuevoEmpleado.dni,
-            correo: nuevoEmpleado.correo,
+            correo: nuevoEmpleado.correo.trim(),
             contraseña: nuevoEmpleado.contraseña,
             especialidad: nuevoEmpleado.especialidad,
             rol: rolSeleccionado
@@ -153,14 +134,10 @@ const GestionPersonal = () => {
             await api.post('/security/registerAsistente', { dni: payload.dni, password: payload.contraseña });
             
             toast.success("Personal registrado con éxito.");
-            setShowModal(false);
-            setNuevoEmpleado({
-                nombre: '', apellidoPaterno: '', apellidoMaterno: '', dni: '', telefono: '', correo: '', contraseña: '', especialidad: ''
-            });
-            setErrors({});
+            handleCloseModal();
             cargarEmpleados();
         } catch (error) {
-            toast.error("Error al registrar. Verifique el DNI y correo.");
+            toast.error("Error al registrar. Verifique si el DNI o correo ya existen.");
             console.error(error);
         }
     };
@@ -174,7 +151,7 @@ const GestionPersonal = () => {
             <div style={{ background: 'var(--surface-card)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                 <div style={{ padding: 'var(--space-lg)', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h4 style={{ margin: 0 }}>Listado de Empleados</h4>
-                    <Button className="btn-primary" size="sm" onClick={() => setShowModal(true)}>
+                    <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
                         + Nuevo {rolSeleccionado}
                     </Button>
                 </div>
@@ -239,14 +216,15 @@ const GestionPersonal = () => {
                 <Modal.Body>
                     <Form onSubmit={handleSubmit} noValidate>
                         <Form.Group className="mb-3">
-                            <Form.Label>DNI</Form.Label>
+                            <Form.Label>DNI (8 dígitos)</Form.Label>
                             <Form.Control 
                                 name="dni" 
                                 required 
                                 maxLength="8"
+                                inputMode="numeric"
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.dni} 
-                                isInvalid={!!errors.dni}
+                                isInvalid={touched.dni && !!errors.dni}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.dni}
@@ -259,7 +237,7 @@ const GestionPersonal = () => {
                                 required 
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.nombre} 
-                                isInvalid={!!errors.nombre}
+                                isInvalid={touched.nombre && !!errors.nombre}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.nombre}
@@ -275,7 +253,7 @@ const GestionPersonal = () => {
                                         maxLength="50"
                                         onChange={handleChange} 
                                         value={nuevoEmpleado.apellidoPaterno} 
-                                        isInvalid={!!errors.apellidoPaterno}
+                                        isInvalid={touched.apellidoPaterno && !!errors.apellidoPaterno}
                                     />
                                     <Form.Control.Feedback type="invalid">
                                         {errors.apellidoPaterno}
@@ -291,7 +269,7 @@ const GestionPersonal = () => {
                                         maxLength="50"
                                         onChange={handleChange} 
                                         value={nuevoEmpleado.apellidoMaterno} 
-                                        isInvalid={!!errors.apellidoMaterno}
+                                        isInvalid={touched.apellidoMaterno && !!errors.apellidoMaterno}
                                     />
                                     <Form.Control.Feedback type="invalid">
                                         {errors.apellidoMaterno}
@@ -300,28 +278,29 @@ const GestionPersonal = () => {
                             </Col>
                         </Row>
                         <Form.Group className="mb-3">
-                            <Form.Label>Teléfono</Form.Label>
+                            <Form.Label>Teléfono (9 dígitos)</Form.Label>
                             <Form.Control 
                                 name="telefono" 
                                 required 
                                 maxLength="9"
+                                inputMode="numeric"
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.telefono} 
-                                isInvalid={!!errors.telefono}
+                                isInvalid={touched.telefono && !!errors.telefono}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.telefono}
                             </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Correo</Form.Label>
+                            <Form.Label>Correo Electrónico</Form.Label>
                             <Form.Control 
                                 name="correo" 
                                 type="email" 
                                 required 
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.correo} 
-                                isInvalid={!!errors.correo}
+                                isInvalid={touched.correo && !!errors.correo}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.correo}
@@ -335,7 +314,7 @@ const GestionPersonal = () => {
                                 required 
                                 onChange={handleChange} 
                                 value={nuevoEmpleado.contraseña} 
-                                isInvalid={!!errors.contraseña}
+                                isInvalid={touched.contraseña && !!errors.contraseña}
                             />
                             <Form.Control.Feedback type="invalid">
                                 {errors.contraseña}
@@ -344,9 +323,14 @@ const GestionPersonal = () => {
 
                         {rolSeleccionado === 'DOCTOR' && (
                             <Form.Group className="mb-3">
-                                <Form.Label>Especialidad</Form.Label>
-                                <Form.Select name="especialidad" onChange={handleChange} value={nuevoEmpleado.especialidad} isInvalid={!!errors.especialidad}>
-                                    <option value="">Seleccione...</option>
+                                <Form.Label>Especialidad Médica</Form.Label>
+                                <Form.Select 
+                                    name="especialidad" 
+                                    onChange={handleChange} 
+                                    value={nuevoEmpleado.especialidad} 
+                                    isInvalid={touched.especialidad && !!errors.especialidad}
+                                >
+                                    <option value="">Seleccione especialidad...</option>
                                     <option value="Cardiologia">Cardiología</option>
                                     <option value="Pediatria">Pediatría</option>
                                     <option value="General">Medicina General</option>
@@ -360,7 +344,7 @@ const GestionPersonal = () => {
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
-                            <Button variant="primary" type="submit">Guardar</Button>
+                            <Button variant="primary" type="submit" disabled={!isFormValid()}>Guardar</Button>
                         </div>
                     </Form>
                 </Modal.Body>

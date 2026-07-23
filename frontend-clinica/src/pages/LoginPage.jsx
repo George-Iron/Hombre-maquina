@@ -7,12 +7,30 @@ const LoginPage = () => {
     const [dni, setDni] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [touched, setTouched] = useState({ dni: false, password: false });
 
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
 
+    // Validaciones lógicas
+    const isDniValid = /^\d{8}$/.test(dni);
+    const isPasswordValid = password.length >= 4;
+    const isFormValid = isDniValid && isPasswordValid;
+
+    const handleDniChange = (e) => {
+        const val = e.target.value.replace(/\D/g, '').slice(0, 8);
+        setDni(val);
+        setError('');
+    };
+
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+        setError('');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!isFormValid) return;
         setError('');
 
         try {
@@ -27,9 +45,9 @@ const LoginPage = () => {
 
         } catch (err) {
             if (err.response && err.response.status === 401) {
-                setError('Credenciales incorrectas. Intente de nuevo.');
+                setError('Credenciales de acceso no válidas para el DNI ingresado.');
             } else {
-                setError('Error de conexión con el servidor.');
+                setError('Error de conexión con el servidor de autenticación.');
                 console.error(err);
             }
         }
@@ -43,7 +61,6 @@ const LoginPage = () => {
             backgroundColor: 'var(--surface-ground)',
             overflow: 'auto',
         }}>
-            {/* Mobile: single column. Desktop: two columns */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -52,7 +69,7 @@ const LoginPage = () => {
                 maxWidth: '960px',
                 margin: '0 auto',
             }}>
-                {/* Left: Branding */}
+                {/* Branding Left */}
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -78,7 +95,7 @@ const LoginPage = () => {
                     </p>
                 </div>
 
-                {/* Right: Form */}
+                {/* Form Right */}
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -110,13 +127,12 @@ const LoginPage = () => {
                                 fontSize: '0.875rem',
                                 marginBottom: 'var(--space-lg)',
                                 border: '1px solid var(--semantic-danger)',
-                                borderColor: 'rgba(160,83,75,0.2)',
                             }}>
                                 {error}
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit}>
+                        <form onSubmit={handleSubmit} noValidate>
                             <div style={{ marginBottom: 'var(--space-lg)' }}>
                                 <label
                                     htmlFor="login-dni"
@@ -133,10 +149,12 @@ const LoginPage = () => {
                                 <input
                                     id="login-dni"
                                     type="text"
-                                    placeholder="Ingrese su DNI"
+                                    inputMode="numeric"
+                                    maxLength={8}
+                                    placeholder="Ingrese DNI (8 dígitos)"
                                     value={dni}
-                                    onChange={(e) => setDni(e.target.value)}
-                                    required
+                                    onChange={handleDniChange}
+                                    onBlur={() => setTouched(prev => ({ ...prev, dni: true }))}
                                     style={{
                                         width: '100%',
                                         padding: '10px 12px',
@@ -144,20 +162,24 @@ const LoginPage = () => {
                                         fontSize: '0.875rem',
                                         color: 'var(--text-primary)',
                                         backgroundColor: 'var(--surface-card)',
-                                        border: '1px solid var(--border-default)',
+                                        border: touched.dni && !isDniValid
+                                            ? '1px solid var(--semantic-danger)'
+                                            : '1px solid var(--border-default)',
                                         borderRadius: 'var(--radius-md)',
                                         outline: 'none',
                                         transition: 'border-color 180ms ease, box-shadow 180ms ease',
                                     }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--accent)';
-                                        e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border-default)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
                                 />
+                                {touched.dni && !isDniValid && (
+                                    <span style={{
+                                        display: 'block',
+                                        color: 'var(--semantic-danger)',
+                                        fontSize: '0.75rem',
+                                        marginTop: '4px'
+                                    }}>
+                                        El DNI debe contener exactamente 8 dígitos numéricos.
+                                    </span>
+                                )}
                             </div>
 
                             <div style={{ marginBottom: 'var(--space-xl)' }}>
@@ -178,8 +200,8 @@ const LoginPage = () => {
                                     type="password"
                                     placeholder="••••••••"
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
+                                    onChange={handlePasswordChange}
+                                    onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
                                     style={{
                                         width: '100%',
                                         padding: '10px 12px',
@@ -187,44 +209,42 @@ const LoginPage = () => {
                                         fontSize: '0.875rem',
                                         color: 'var(--text-primary)',
                                         backgroundColor: 'var(--surface-card)',
-                                        border: '1px solid var(--border-default)',
+                                        border: touched.password && !isPasswordValid
+                                            ? '1px solid var(--semantic-danger)'
+                                            : '1px solid var(--border-default)',
                                         borderRadius: 'var(--radius-md)',
                                         outline: 'none',
                                         transition: 'border-color 180ms ease, box-shadow 180ms ease',
                                     }}
-                                    onFocus={(e) => {
-                                        e.target.style.borderColor = 'var(--accent)';
-                                        e.target.style.boxShadow = '0 0 0 3px var(--accent-subtle)';
-                                    }}
-                                    onBlur={(e) => {
-                                        e.target.style.borderColor = 'var(--border-default)';
-                                        e.target.style.boxShadow = 'none';
-                                    }}
                                 />
+                                {touched.password && !isPasswordValid && (
+                                    <span style={{
+                                        display: 'block',
+                                        color: 'var(--semantic-danger)',
+                                        fontSize: '0.75rem',
+                                        marginTop: '4px'
+                                    }}>
+                                        La contraseña debe tener al menos 4 caracteres.
+                                    </span>
+                                )}
                             </div>
 
                             <button
                                 type="submit"
+                                disabled={!isFormValid}
                                 style={{
                                     width: '100%',
                                     padding: '12px 20px',
-                                    backgroundColor: 'var(--accent)',
-                                    color: 'var(--text-inverse)',
-                                    border: 'none',
+                                    backgroundColor: isFormValid ? 'var(--accent)' : 'var(--surface-inset)',
+                                    color: isFormValid ? 'var(--text-inverse)' : 'var(--text-tertiary)',
+                                    border: isFormValid ? 'none' : '1px solid var(--border-default)',
                                     borderRadius: 'var(--radius-md)',
                                     fontFamily: 'var(--font-sans)',
                                     fontSize: '0.9375rem',
                                     fontWeight: 500,
-                                    cursor: 'pointer',
+                                    cursor: isFormValid ? 'pointer' : 'not-allowed',
                                     transition: 'all 180ms ease',
-                                }}
-                                onMouseOver={(e) => {
-                                    e.target.style.backgroundColor = 'var(--accent-hover)';
-                                    e.target.style.transform = 'translateY(-1px)';
-                                }}
-                                onMouseOut={(e) => {
-                                    e.target.style.backgroundColor = 'var(--accent)';
-                                    e.target.style.transform = 'translateY(0)';
+                                    opacity: isFormValid ? 1 : 0.75,
                                 }}
                             >
                                 Ingresar

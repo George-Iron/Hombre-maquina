@@ -5,16 +5,18 @@ import { toast } from 'react-toastify';
 
 const GestionProgramacion = () => {
     const [consultorios, setConsultorios] = useState([]);
-    const [doctores, setDoctores] = useState([]); // Para el select
-    const [turnos, setTurnos] = useState([]); // Todos los turnos
+    const [doctores, setDoctores] = useState([]);
+    const [turnos, setTurnos] = useState([]);
     
     // Formulario Consultorio
     const [nombreCons, setNombreCons] = useState('');
 
     // Formulario Horario
     const [formHorario, setFormHorario] = useState({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
+    const [horarioTouched, setHorarioTouched] = useState({});
 
-    // CARGAR DATOS INICIALES
+    const todayStr = new Date().toISOString().split('T')[0];
+
     useEffect(() => {
         cargarConsultorios();
         cargarDoctores();
@@ -26,53 +28,73 @@ const GestionProgramacion = () => {
             const res = await api.get('/programacion/horario/listar');
             setTurnos(res.data);
         } catch (error) {
-            toast.error("Error al cargar los turnos");
+            toast.error("Error al cargar los turnos.");
             console.error(error);
         }
     };
 
     const cargarConsultorios = async () => {
-        const res = await api.get('/programacion/consultorio/listar');
-        setConsultorios(res.data);
-    };
-
-    const cargarDoctores = async () => {
-        const res = await api.get('/personal/listar/DOCTOR');
-        setDoctores(res.data);
-    };
-
-    // GUARDAR CONSULTORIO
-    const handleGuardarConsultorio = async (e) => {
-        e.preventDefault();
         try {
-            await api.post('/programacion/consultorio/registrar', { nombre: nombreCons });
-            toast.success("¡Consultorio registrado con éxito!");
-            setNombreCons('');
-            cargarConsultorios();
-        } catch (error) { 
-            toast.error("Error al crear consultorio"); 
+            const res = await api.get('/programacion/consultorio/listar');
+            setConsultorios(res.data);
+        } catch (error) {
             console.error(error);
         }
     };
 
-    // GUARDAR HORARIO
+    const cargarDoctores = async () => {
+        try {
+            const res = await api.get('/personal/listar/DOCTOR');
+            setDoctores(res.data);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // Validaciones lógicas
+    const isFechaValida = formHorario.fecha && formHorario.fecha >= todayStr;
+    const isHorarioFormValid = formHorario.idMedico && formHorario.idConsultorio && isFechaValida && formHorario.horaInicio;
+    const isConsultorioValid = nombreCons.trim().length >= 3;
+
+    const handleGuardarConsultorio = async (e) => {
+        e.preventDefault();
+        if (!isConsultorioValid) {
+            toast.error("Ingrese un nombre de consultorio válido (mínimo 3 caracteres).");
+            return;
+        }
+        try {
+            await api.post('/programacion/consultorio/registrar', { nombre: nombreCons.trim() });
+            toast.success("Consultorio registrado con éxito.");
+            setNombreCons('');
+            cargarConsultorios();
+        } catch (error) { 
+            toast.error("Error al crear consultorio."); 
+            console.error(error);
+        }
+    };
+
     const handleGuardarHorario = async (e) => {
         e.preventDefault();
-        // Armar el payload complejo que espera el backend
+        if (!isHorarioFormValid) {
+            toast.error("Verifique que todos los campos del horario sean válidos y la fecha no sea pasada.");
+            return;
+        }
+
         const payload = {
             idMedico: formHorario.idMedico,
             consultorio: { idConsultorio: formHorario.idConsultorio },
             fecha: formHorario.fecha,
-            horaInicio: formHorario.horaInicio + ":00" // Agregar segundos si es necesario
+            horaInicio: formHorario.horaInicio + ":00"
         };
 
         try {
             await api.post('/programacion/horario/registrar', payload);
-            toast.success("¡Horario programado con éxito!");
+            toast.success("Horario programado con éxito.");
             setFormHorario({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
+            setHorarioTouched({});
             cargarTurnos();
         } catch (error) { 
-            toast.error("Error: Posible cruce de horarios"); 
+            toast.error("Error: Posible cruce de horarios o conflicto de asignación."); 
             console.error(error);
         }
     };
@@ -116,45 +138,96 @@ const GestionProgramacion = () => {
                     <Tab eventKey="horarios" title="Asignar Horarios">
                         <div className="p-2">
                             <h4 className="mb-4 text-secondary">Programar Turno Médico</h4>
-                            <Form onSubmit={handleGuardarHorario}>
+                            <Form onSubmit={handleGuardarHorario} noValidate>
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Médico</Form.Label>
-                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idMedico: e.target.value})} value={formHorario.idMedico} aria-label="Seleccionar médico para el turno">
+                                            <Form.Select 
+                                                required 
+                                                onChange={e => {
+                                                    setFormHorario({...formHorario, idMedico: e.target.value});
+                                                    setHorarioTouched({...horarioTouched, idMedico: true});
+                                                }} 
+                                                value={formHorario.idMedico} 
+                                                isInvalid={horarioTouched.idMedico && !formHorario.idMedico}
+                                                aria-label="Seleccionar médico para el turno"
+                                            >
                                                 <option value="">Seleccione Doctor...</option>
                                                 {doctores.map(d => (
                                                     <option key={d.idEmpleado} value={d.idEmpleado}>{d.nombre} {d.apellido} ({d.especialidad})</option>
                                                 ))}
                                             </Form.Select>
+                                            <Form.Control.Feedback type="invalid">
+                                                Debe seleccionar un médico.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Consultorio</Form.Label>
-                                            <Form.Select required onChange={e => setFormHorario({...formHorario, idConsultorio: e.target.value})} value={formHorario.idConsultorio} aria-label="Seleccionar consultorio para el turno">
+                                            <Form.Select 
+                                                required 
+                                                onChange={e => {
+                                                    setFormHorario({...formHorario, idConsultorio: e.target.value});
+                                                    setHorarioTouched({...horarioTouched, idConsultorio: true});
+                                                }} 
+                                                value={formHorario.idConsultorio} 
+                                                isInvalid={horarioTouched.idConsultorio && !formHorario.idConsultorio}
+                                                aria-label="Seleccionar consultorio para el turno"
+                                            >
                                                 <option value="">Seleccione Consultorio...</option>
                                                 {consultorios.map(c => (
                                                     <option key={c.idConsultorio} value={c.idConsultorio}>{c.nombre}</option>
                                                 ))}
                                             </Form.Select>
+                                            <Form.Control.Feedback type="invalid">
+                                                Debe seleccionar un consultorio.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Fecha</Form.Label>
-                                            <Form.Control type="date" required onChange={e => setFormHorario({...formHorario, fecha: e.target.value})} value={formHorario.fecha} aria-label="Seleccionar fecha del turno" />
+                                            <Form.Label>Fecha del Turno</Form.Label>
+                                            <Form.Control 
+                                                type="date" 
+                                                required 
+                                                min={todayStr}
+                                                onChange={e => {
+                                                    setFormHorario({...formHorario, fecha: e.target.value});
+                                                    setHorarioTouched({...horarioTouched, fecha: true});
+                                                }} 
+                                                value={formHorario.fecha} 
+                                                isInvalid={horarioTouched.fecha && !isFechaValida}
+                                                aria-label="Seleccionar fecha del turno" 
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                La fecha no puede ser anterior al día de hoy.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Hora Inicio</Form.Label>
-                                            <Form.Control type="time" required onChange={e => setFormHorario({...formHorario, horaInicio: e.target.value})} value={formHorario.horaInicio} aria-label="Seleccionar hora de inicio del turno" />
+                                            <Form.Control 
+                                                type="time" 
+                                                required 
+                                                onChange={e => {
+                                                    setFormHorario({...formHorario, horaInicio: e.target.value});
+                                                    setHorarioTouched({...horarioTouched, horaInicio: true});
+                                                }} 
+                                                value={formHorario.horaInicio} 
+                                                isInvalid={horarioTouched.horaInicio && !formHorario.horaInicio}
+                                                aria-label="Seleccionar hora de inicio del turno" 
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                Debe seleccionar la hora de inicio.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                 </Row>
                                 <div className="d-flex justify-content-end mt-3">
-                                    <Button type="submit" variant="primary" className="px-4" aria-label="Guardar programación del turno médico">
+                                    <Button type="submit" variant="primary" className="px-4" disabled={!isHorarioFormValid} aria-label="Guardar programación del turno médico">
                                         Guardar Programación
                                     </Button>
                                 </div>
@@ -182,8 +255,8 @@ const GestionProgramacion = () => {
                                                         <small className="text-muted">{t.especialidadMedico}</small>
                                                     </td>
                                                     <td className="p-3 text-dark">{t.consultorio ? t.consultorio.nombre : 'Sin consultorio'}</td>
-                                                    <td className="p-3 text-dark">{t.fecha}</td>
-                                                    <td className="p-3 text-dark">{t.horaInicio}</td>
+                                                    <td className="p-3 text-dark" style={{ fontVariantNumeric: 'tabular-nums' }}>{t.fecha}</td>
+                                                    <td className="p-3 text-dark" style={{ fontVariantNumeric: 'tabular-nums' }}>{t.horaInicio}</td>
                                                     <td className="p-3">
                                                         {renderEstadoBadge(t.estadoTurno)}
                                                     </td>
@@ -209,18 +282,22 @@ const GestionProgramacion = () => {
                             <Col md={4}>
                                 <div className="bg-light p-4 rounded border">
                                     <h5 className="mb-3">Nuevo Consultorio</h5>
-                                    <Form onSubmit={handleGuardarConsultorio}>
+                                    <Form onSubmit={handleGuardarConsultorio} noValidate>
                                         <Form.Group className="mb-3">
                                             <Form.Label>Nombre / Número</Form.Label>
                                             <Form.Control 
-                                                placeholder="Ej: Consultorio 204 - Rayos X" 
+                                                placeholder="Ej: Consultorio 204" 
                                                 value={nombreCons} 
                                                 onChange={e => setNombreCons(e.target.value)} 
+                                                isInvalid={nombreCons.length > 0 && !isConsultorioValid}
                                                 required 
                                                 aria-label="Nombre o número del nuevo consultorio"
                                             />
+                                            <Form.Control.Feedback type="invalid">
+                                                El nombre debe tener al menos 3 caracteres.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
-                                        <Button type="submit" variant="primary" size="sm" className="w-100" aria-label="Registrar nuevo consultorio">
+                                        <Button type="submit" variant="primary" size="sm" className="w-100" disabled={!isConsultorioValid} aria-label="Registrar nuevo consultorio">
                                             Crear
                                         </Button>
                                     </Form>
@@ -238,7 +315,7 @@ const GestionProgramacion = () => {
                                         <tbody>
                                             {consultorios.map(c => (
                                                 <tr key={c.idConsultorio}>
-                                                    <td className="p-3">{c.idConsultorio}</td>
+                                                    <td className="p-3" style={{ fontVariantNumeric: 'tabular-nums' }}>{c.idConsultorio}</td>
                                                     <td className="p-3 fw-bold">{c.nombre}</td>
                                                 </tr>
                                             ))}

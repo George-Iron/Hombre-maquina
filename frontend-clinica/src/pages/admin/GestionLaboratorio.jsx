@@ -8,6 +8,12 @@ const GestionLaboratorio = () => {
     const [nombresPredefinidos, setNombresPredefinidos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '' });
+    const [touched, setTouched] = useState({});
+
+    const precioNum = parseFloat(form.precio);
+    const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
+    const isDescripcionValida = form.descripcion.trim().length >= 3;
+    const isFormValido = form.nombre && isDescripcionValida && isPrecioValido;
 
     const cargar = async () => {
         try {
@@ -30,14 +36,22 @@ const GestionLaboratorio = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!isFormValido) {
+            toast.error("Complete todos los campos requeridos con datos válidos.");
+            return;
+        }
         try {
-            await api.post('/laboratorio/registrar', form);
+            await api.post('/laboratorio/registrar', {
+                ...form,
+                descripcion: form.descripcion.trim()
+            });
             toast.success("Análisis registrado con éxito.");
             setShowModal(false);
             setForm({ nombre: '', descripcion: '', precio: '' });
+            setTouched({});
             cargar();
         } catch (e) { 
-            toast.error("Error al guardar análisis"); 
+            toast.error("Error al guardar análisis."); 
             console.error(e);
         }
     };
@@ -56,53 +70,62 @@ const GestionLaboratorio = () => {
                     </Button>
                 </div>
 
-                <Table hover responsive className="align-middle">
-                    <thead className="bg-light">
-                        <tr>
-                            <th className="border-0 text-secondary">ID</th>
-                            <th className="border-0 text-secondary">Nombre</th>
-                            <th className="border-0 text-secondary">Descripción</th>
-                            <th className="border-0 text-secondary">Precio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {analisis.map(a => (
-                            <tr key={a.idTipoAnalisis}>
-                                <td>{a.idTipoAnalisis}</td>
-                                <td className="fw-bold">{a.nombre}</td>
-                                <td>{a.descripcion}</td>
-                                <td>S/ {a.precio}</td>
-                            </tr>
-                        ))}
-                        {analisis.length === 0 && (
+                <div className="table-scroll">
+                    <Table hover responsive className="align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td colSpan="4" className="text-center py-4 text-muted">
-                                    No hay análisis registrados en el sistema
-                                </td>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Precio</th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {analisis.map(a => (
+                                <tr key={a.idTipoAnalisis}>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{a.idTipoAnalisis}</td>
+                                    <td style={{ fontWeight: 500 }}>{a.nombre}</td>
+                                    <td>{a.descripcion}</td>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>S/ {a.precio}</td>
+                                </tr>
+                            ))}
+                            {analisis.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" className="text-center py-4 text-muted">
+                                        No hay análisis registrados en el sistema
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
             </div>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={() => { setShowModal(false); setTouched({}); }} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Nuevo Tipo de Análisis</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit} noValidate>
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre</Form.Label>
                             <Form.Select 
                                 required 
                                 value={form.nombre}
-                                onChange={e => setForm({...form, nombre: e.target.value})}
+                                onChange={e => {
+                                    setForm({...form, nombre: e.target.value});
+                                    setTouched({...touched, nombre: true});
+                                }}
+                                isInvalid={touched.nombre && !form.nombre}
                             >
                                 <option value="">Seleccione un análisis...</option>
                                 {nombresPredefinidos.map((nom, index) => (
                                     <option key={index} value={nom}>{nom}</option>
                                 ))}
                             </Form.Select>
+                            <Form.Control.Feedback type="invalid">
+                                Debe seleccionar un tipo de análisis.
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Descripción</Form.Label>
@@ -111,25 +134,40 @@ const GestionLaboratorio = () => {
                                 as="textarea" 
                                 rows={2}
                                 value={form.descripcion}
-                                onChange={e => setForm({...form, descripcion: e.target.value})} 
+                                onChange={e => {
+                                    setForm({...form, descripcion: e.target.value});
+                                    setTouched({...touched, descripcion: true});
+                                }} 
+                                isInvalid={touched.descripcion && !isDescripcionValida}
                             />
+                            <Form.Control.Feedback type="invalid">
+                                La descripción debe tener al menos 3 caracteres.
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Precio (S/)</Form.Label>
                             <Form.Control 
                                 type="number" 
-                                step="0.1" 
+                                step="0.10" 
+                                min="0.10"
                                 required 
                                 value={form.precio}
-                                onChange={e => setForm({...form, precio: e.target.value})} 
+                                onChange={e => {
+                                    setForm({...form, precio: e.target.value});
+                                    setTouched({...touched, precio: true});
+                                }} 
+                                isInvalid={touched.precio && !isPrecioValido}
                             />
+                            <Form.Control.Feedback type="invalid">
+                                El precio debe ser un número mayor a 0.
+                            </Form.Control.Feedback>
                         </Form.Group>
                         
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => setShowModal(false)}>
+                            <Button variant="secondary" onClick={() => { setShowModal(false); setTouched({}); }}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" variant="primary">
+                            <Button type="submit" variant="primary" disabled={!isFormValido}>
                                 Guardar
                             </Button>
                         </div>

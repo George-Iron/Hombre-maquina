@@ -36,6 +36,13 @@ const AtencionMedica = () => {
     const [anaSeleccionado, setAnaSeleccionado] = useState('');
     const [indicaciones, setIndicaciones] = useState('');
 
+    const [touched, setTouched] = useState({ diagnostico: false, tratamiento: false });
+
+    // Validaciones lógicas
+    const isDiagnosticoValido = diagnostico.trim().length >= 5;
+    const isTratamientoValido = tratamiento.trim().length >= 5;
+    const isConsultaValida = isDiagnosticoValido && isTratamientoValido;
+
     useEffect(() => {
         const cargarDatos = async () => {
             try {
@@ -69,22 +76,29 @@ const AtencionMedica = () => {
     }, [idCita]);
 
     const agregarMedicamento = () => {
-        if (!medSeleccionado || !dosis) return;
+        if (!medSeleccionado || !dosis.trim()) {
+            toast.error("Seleccione un medicamento y especifique la dosis.");
+            return;
+        }
         const medObj = medicamentos.find(m => m.idMedicamento == medSeleccionado);
         if (medObj) {
-            setRecetaItems([...recetaItems, { idMedicamento: medSeleccionado, nombre: medObj.nombre, dosis }]);
+            setRecetaItems([...recetaItems, { idMedicamento: medSeleccionado, nombre: medObj.nombre, dosis: dosis.trim() }]);
             setDosis('');
+            setMedSeleccionado('');
         }
     };
 
     const agregarAnalisis = () => {
-        if (!anaSeleccionado) return;
+        if (!anaSeleccionado) {
+            toast.error("Seleccione un tipo de análisis.");
+            return;
+        }
         const anaObj = analisis.find(a => a.idTipoAnalisis == anaSeleccionado);
         if (anaObj) {
             setAnalisisItems([...analisisItems, { 
                 idTipoAnalisis: anaSeleccionado, 
                 nombreAnalisis: anaObj.nombre, 
-                indicaciones: indicaciones || 'Sin indicaciones' 
+                indicaciones: indicaciones.trim() || 'Sin indicaciones' 
             }]);
             setIndicaciones('');
             setAnaSeleccionado('');
@@ -93,6 +107,10 @@ const AtencionMedica = () => {
 
     const handleShowConfirm = (e) => {
         e.preventDefault();
+        if (!isConsultaValida) {
+            toast.error("Complete el diagnóstico y el tratamiento (mínimo 5 caracteres cada uno) antes de guardar.");
+            return;
+        }
         setShowConfirmModal(true);
     };
 
@@ -100,7 +118,9 @@ const AtencionMedica = () => {
         setShowConfirmModal(false);
         const payload = {
             idCita: idCita,
-            diagnostico, tratamiento, observaciones,
+            diagnostico: diagnostico.trim(),
+            tratamiento: tratamiento.trim(),
+            observaciones: observaciones.trim(),
             receta: recetaItems,
             ordenesAnalisis: analisisItems
         };
@@ -130,13 +150,13 @@ const AtencionMedica = () => {
                         </p>
                     </div>
                     <div className="d-flex gap-2 mt-2 mt-md-0">
-                        <Badge bg="light">Peso: {historia?.peso || 'N/A'}</Badge>
-                        <Badge bg="light">Talla: {historia?.talla || 'N/A'}</Badge>
+                        <Badge bg="light">Peso: {historia?.peso ? `${historia.peso} kg` : 'N/A'}</Badge>
+                        <Badge bg="light">Talla: {historia?.talla ? `${historia.talla} m` : 'N/A'}</Badge>
                     </div>
                 </Card.Body>
             </Card>
 
-            <Row>
+            <Row className="g-3">
                 {/* HISTORIAL */}
                 <Col lg={4}>
                     <Card className="h-100 border-0">
@@ -188,18 +208,42 @@ const AtencionMedica = () => {
                             <h5 className="mb-0" style={{ color: 'var(--accent)' }}>Nueva Consulta (Cita #{idCita})</h5>
                         </Card.Header>
                         <Card.Body>
-                            <Form onSubmit={handleShowConfirm}>
+                            <Form onSubmit={handleShowConfirm} noValidate>
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Diagnóstico</Form.Label>
-                                            <Form.Control as="textarea" rows={3} required value={diagnostico} onChange={e => setDiagnostico(e.target.value)} aria-label="Ingresar Diagnóstico Médico" />
+                                            <Form.Label>Diagnóstico Médico (Mínimo 5 caracteres)</Form.Label>
+                                            <Form.Control 
+                                                as="textarea" 
+                                                rows={3} 
+                                                required 
+                                                value={diagnostico} 
+                                                onChange={e => setDiagnostico(e.target.value)} 
+                                                onBlur={() => setTouched(prev => ({ ...prev, diagnostico: true }))}
+                                                isInvalid={touched.diagnostico && !isDiagnosticoValido}
+                                                aria-label="Ingresar Diagnóstico Médico" 
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                Ingrese un diagnóstico descriptivo de al menos 5 caracteres.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3">
-                                            <Form.Label>Tratamiento</Form.Label>
-                                            <Form.Control as="textarea" rows={3} required value={tratamiento} onChange={e => setTratamiento(e.target.value)} aria-label="Ingresar Tratamiento Médico" />
+                                            <Form.Label>Tratamiento Prescrito (Mínimo 5 caracteres)</Form.Label>
+                                            <Form.Control 
+                                                as="textarea" 
+                                                rows={3} 
+                                                required 
+                                                value={tratamiento} 
+                                                onChange={e => setTratamiento(e.target.value)} 
+                                                onBlur={() => setTouched(prev => ({ ...prev, tratamiento: true }))}
+                                                isInvalid={touched.tratamiento && !isTratamientoValido}
+                                                aria-label="Ingresar Tratamiento Médico" 
+                                            />
+                                            <Form.Control.Feedback type="invalid">
+                                                Ingrese indicaciones de tratamiento de al menos 5 caracteres.
+                                            </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
                                     <Col md={12}>
@@ -232,7 +276,7 @@ const AtencionMedica = () => {
                                         <Form.Control placeholder="Ej: 1 c/8h" value={dosis} onChange={e => setDosis(e.target.value)} aria-label="Ingresar Dosis del Medicamento" />
                                     </Col>
                                     <Col md={2}>
-                                        <Button variant="outline-success" className="w-100" onClick={agregarMedicamento} aria-label="Agregar Medicamento a la Receta">Agregar</Button>
+                                        <Button variant="outline-success" className="w-100" disabled={!medSeleccionado || !dosis.trim()} onClick={agregarMedicamento} aria-label="Agregar Medicamento a la Receta">Agregar</Button>
                                     </Col>
                                 </Row>
 
@@ -263,7 +307,7 @@ const AtencionMedica = () => {
                                         <Form.Control placeholder="Ej: En ayunas" value={indicaciones} onChange={e => setIndicaciones(e.target.value)} aria-label="Ingresar Indicaciones para el Análisis" />
                                     </Col>
                                     <Col md={2}>
-                                        <Button variant="outline-info" className="w-100" onClick={agregarAnalisis} aria-label="Agregar Análisis de Laboratorio a las Órdenes">Agregar</Button>
+                                        <Button variant="outline-info" className="w-100" disabled={!anaSeleccionado} onClick={agregarAnalisis} aria-label="Agregar Análisis de Laboratorio a las Órdenes">Agregar</Button>
                                     </Col>
                                 </Row>
 
@@ -280,7 +324,7 @@ const AtencionMedica = () => {
 
                                 <div className="text-end mt-4">
                                     <Button variant="secondary" className="me-2" onClick={() => navigate('/medico/agenda')} aria-label="Cancelar y volver a la agenda">Cancelar</Button>
-                                    <Button variant="primary" size="lg" type="submit" aria-label="Confirmar Finalizar y Guardar Historia Clínica">Finalizar y Guardar Historia</Button>
+                                    <Button variant="primary" size="lg" type="submit" disabled={!isConsultaValida} aria-label="Confirmar Finalizar y Guardar Historia Clínica">Finalizar y Guardar Historia</Button>
                                 </div>
                             </Form>
                         </Card.Body>
@@ -291,16 +335,16 @@ const AtencionMedica = () => {
             {/* Modal de Confirmación */}
             <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
                 <Modal.Header closeButton>
-                    <Modal.Title>Confirmar Acción</Modal.Title>
+                    <Modal.Title>Confirmar Atención</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    ¿Está seguro de procesar esta acción? Los datos se guardarán permanentemente en el sistema.
+                    ¿Está seguro de finalizar y guardar la historia clínica? Los datos se guardarán permanentemente en el sistema.
                 </Modal.Body>
                 <Modal.Footer>
                     <Button variant="secondary" onClick={() => setShowConfirmModal(false)} aria-label="Cerrar modal de confirmación">
                         Cancelar
                     </Button>
-                    <Button variant="danger" onClick={handleConfirmSubmit} aria-label="Confirmar guardar historia clínica">
+                    <Button variant="primary" onClick={handleConfirmSubmit} aria-label="Confirmar guardar historia clínica">
                         Confirmar
                     </Button>
                 </Modal.Footer>

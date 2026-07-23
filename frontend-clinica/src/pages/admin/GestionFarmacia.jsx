@@ -9,6 +9,11 @@ const GestionFarmacia = () => {
     const [nombresPredefinidos, setNombresPredefinidos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ nombre: '', laboratorio: '', precio: '' });
+    const [touched, setTouched] = useState({});
+
+    const precioNum = parseFloat(form.precio);
+    const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
+    const isFormValido = form.nombre && form.laboratorio && isPrecioValido;
 
     const cargar = async () => {
         try {
@@ -33,14 +38,19 @@ const GestionFarmacia = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!isFormValido) {
+            toast.error("Complete todos los campos requeridos con datos válidos.");
+            return;
+        }
         try {
             await api.post('/farmacia/registrar', form);
             toast.success("Medicamento registrado con éxito.");
             setShowModal(false);
             setForm({ nombre: '', laboratorio: '', precio: '' });
+            setTouched({});
             cargar();
         } catch (e) { 
-            toast.error("Error al guardar medicamento"); 
+            toast.error("Error al guardar medicamento."); 
             console.error(e);
         }
     };
@@ -59,83 +69,107 @@ const GestionFarmacia = () => {
                     </Button>
                 </div>
 
-                <Table hover responsive className="align-middle">
-                    <thead className="bg-light">
-                        <tr>
-                            <th className="border-0 text-secondary">ID</th>
-                            <th className="border-0 text-secondary">Nombre</th>
-                            <th className="border-0 text-secondary">Laboratorio</th>
-                            <th className="border-0 text-secondary">Precio</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {medicamentos.map(m => (
-                            <tr key={m.idMedicamento}>
-                                <td>{m.idMedicamento}</td>
-                                <td className="fw-bold">{m.nombre}</td>
-                                <td>{m.laboratorio}</td>
-                                <td>S/ {m.precio}</td>
-                            </tr>
-                        ))}
-                        {medicamentos.length === 0 && (
+                <div className="table-scroll">
+                    <Table hover responsive className="align-middle mb-0">
+                        <thead>
                             <tr>
-                                <td colSpan="4" className="text-center py-4 text-muted">
-                                    No hay medicamentos registrados
-                                </td>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Laboratorio</th>
+                                <th>Precio Unitario</th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {medicamentos.map(m => (
+                                <tr key={m.idMedicamento}>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>{m.idMedicamento}</td>
+                                    <td style={{ fontWeight: 500 }}>{m.nombre}</td>
+                                    <td>{m.laboratorio}</td>
+                                    <td style={{ fontVariantNumeric: 'tabular-nums' }}>S/ {m.precio}</td>
+                                </tr>
+                            ))}
+                            {medicamentos.length === 0 && (
+                                <tr>
+                                    <td colSpan="4" className="text-center py-4 text-muted">
+                                        No hay medicamentos registrados
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                </div>
             </div>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={() => { setShowModal(false); setTouched({}); }} centered>
                 <Modal.Header closeButton>
                     <Modal.Title>Nuevo Medicamento</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form onSubmit={handleSubmit}>
+                    <Form onSubmit={handleSubmit} noValidate>
                         <Form.Group className="mb-3">
                             <Form.Label>Nombre Comercial</Form.Label>
                             <Form.Select 
                                 required 
                                 value={form.nombre}
-                                onChange={e => setForm({...form, nombre: e.target.value})}
+                                onChange={e => {
+                                    setForm({...form, nombre: e.target.value});
+                                    setTouched({...touched, nombre: true});
+                                }}
+                                isInvalid={touched.nombre && !form.nombre}
                             >
                                 <option value="">Seleccione un medicamento...</option>
                                 {nombresPredefinidos.map((nom, index) => (
                                     <option key={index} value={nom}>{nom}</option>
                                 ))}
                             </Form.Select>
+                            <Form.Control.Feedback type="invalid">
+                                Debe seleccionar un medicamento.
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Laboratorio</Form.Label>
                             <Form.Select 
                                 required 
                                 value={form.laboratorio}
-                                onChange={e => setForm({...form, laboratorio: e.target.value})}
+                                onChange={e => {
+                                    setForm({...form, laboratorio: e.target.value});
+                                    setTouched({...touched, laboratorio: true});
+                                }}
+                                isInvalid={touched.laboratorio && !form.laboratorio}
                             >
                                 <option value="">Seleccione un laboratorio...</option>
                                 {laboratorios.map((lab, index) => (
                                     <option key={index} value={lab}>{lab}</option>
                                 ))}
                             </Form.Select>
+                            <Form.Control.Feedback type="invalid">
+                                Debe seleccionar un laboratorio.
+                            </Form.Control.Feedback>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label>Precio Unitario (S/)</Form.Label>
                             <Form.Control 
                                 type="number" 
-                                step="0.1" 
+                                step="0.10" 
+                                min="0.10"
                                 required 
                                 value={form.precio}
-                                onChange={e => setForm({...form, precio: e.target.value})} 
+                                onChange={e => {
+                                    setForm({...form, precio: e.target.value});
+                                    setTouched({...touched, precio: true});
+                                }} 
+                                isInvalid={touched.precio && !isPrecioValido}
                             />
+                            <Form.Control.Feedback type="invalid">
+                                El precio debe ser un número mayor a 0.
+                            </Form.Control.Feedback>
                         </Form.Group>
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="secondary" onClick={() => setShowModal(false)}>
+                            <Button variant="secondary" onClick={() => { setShowModal(false); setTouched({}); }}>
                                 Cancelar
                             </Button>
-                            <Button type="submit" variant="primary">
+                            <Button type="submit" variant="primary" disabled={!isFormValido}>
                                 Guardar
                             </Button>
                         </div>
