@@ -71,10 +71,10 @@ const AgendarCitaPage = () => {
 
     const isFormPacienteValid = () => {
         const isDoc = /^\d{8}$/.test(formPaciente.documento);
-        const isNom = formPaciente.nombre.trim().length > 0;
-        const isPat = formPaciente.apellidoPaterno.trim().length >= 2;
-        const isMat = formPaciente.apellidoMaterno.trim().length >= 2;
-        const isTel = /^\d{9}$/.test(formPaciente.telefono);
+        const isNom = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.nombre.trim());
+        const isPat = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.apellidoPaterno.trim());
+        const isMat = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.apellidoMaterno.trim());
+        const isTel = /^9\d{8}$/.test(formPaciente.telefono);
         const isFecha = formPaciente.fechaNac && formPaciente.fechaNac <= todayStr && formPaciente.fechaNac >= '1900-01-01';
         return isDoc && isNom && isPat && isMat && isTel && isFecha;
     };
@@ -494,7 +494,7 @@ const AgendarCitaPage = () => {
                             <Form.Label>Nombres</Form.Label>
                             <Form.Control 
                                 name="nombre" required 
-                                onChange={e => setFormPaciente({...formPaciente, nombre: e.target.value})} 
+                                onChange={e => setFormPaciente({...formPaciente, nombre: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')})} 
                                 value={formPaciente.nombre} 
                             />
                         </Form.Group>
@@ -504,7 +504,7 @@ const AgendarCitaPage = () => {
                                     <Form.Label>Apellido Paterno</Form.Label>
                                     <Form.Control 
                                         name="apellidoPaterno" required maxLength="50"
-                                        onChange={e => setFormPaciente({...formPaciente, apellidoPaterno: e.target.value})} 
+                                        onChange={e => setFormPaciente({...formPaciente, apellidoPaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')})} 
                                         value={formPaciente.apellidoPaterno} 
                                     />
                                 </Form.Group>
@@ -514,7 +514,7 @@ const AgendarCitaPage = () => {
                                     <Form.Label>Apellido Materno</Form.Label>
                                     <Form.Control 
                                         name="apellidoMaterno" required maxLength="50"
-                                        onChange={e => setFormPaciente({...formPaciente, apellidoMaterno: e.target.value})} 
+                                        onChange={e => setFormPaciente({...formPaciente, apellidoMaterno: e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')})} 
                                         value={formPaciente.apellidoMaterno} 
                                     />
                                 </Form.Group>
@@ -536,7 +536,11 @@ const AgendarCitaPage = () => {
                                     <Form.Label>Teléfono (9 dígitos)</Form.Label>
                                     <Form.Control 
                                         name="telefono" required maxLength="9" inputMode="numeric"
-                                        onChange={e => setFormPaciente({...formPaciente, telefono: e.target.value.replace(/\D/g, '').slice(0, 9)})} 
+                                        onChange={e => {
+                                            let digits = e.target.value.replace(/\D/g, '');
+                                            if (digits.length > 0 && digits[0] !== '9') digits = '';
+                                            setFormPaciente({...formPaciente, telefono: digits.slice(0, 9)});
+                                        }} 
                                         value={formPaciente.telefono} 
                                     />
                                 </Form.Group>

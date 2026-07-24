@@ -21,6 +21,7 @@ const GestionFarmacia = () => {
         precio: '', 
         stock: '50'
     });
+    const [nombreOtro, setNombreOtro] = useState('');
     const [touched, setTouched] = useState({});
 
     const STOCK_ALERTA_FIJO = 10;
@@ -39,11 +40,17 @@ const GestionFarmacia = () => {
     const [tipoMovimiento, setTipoMovimiento] = useState('ENTRADA');
     const [cantidadMovimiento, setCantidadMovimiento] = useState('10');
 
+    const isNombreOtroValido = form.nombre === 'Otros' 
+        ? (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreOtro.trim()) && nombreOtro.trim().length > 5)
+        : true;
+
     const precioNum = parseFloat(form.precio);
     const stockNum = parseInt(form.stock);
-    const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
-    const isStockValido = !isNaN(stockNum) && stockNum >= 0;
-    const isFormValido = form.nombre && form.laboratorio && isPrecioValido && isStockValido;
+    const isPrecioValido = !isNaN(precioNum) && precioNum >= 0.10 && precioNum <= 999999.99;
+    const isStockValido = !isNaN(stockNum) && stockNum >= 0 && stockNum <= 10000;
+    
+    const isNombreValido = form.nombre === 'Otros' ? (isNombreOtroValido && nombreOtro.trim().length > 5) : Boolean(form.nombre);
+    const isFormValido = isNombreValido && form.laboratorio && isPrecioValido && isStockValido;
 
     const cargar = async () => {
         try {
@@ -76,12 +83,18 @@ const GestionFarmacia = () => {
     useEffect(() => { cargar(); }, []);
 
     const handleEditar = (m) => {
+        const esPredefinido = nombresPredefinidos.includes(m.nombre);
         setForm({ 
-            nombre: m.nombre, 
+            nombre: esPredefinido ? m.nombre : 'Otros', 
             laboratorio: m.laboratorio, 
             precio: m.precio,
             stock: m.stock || '50'
         });
+        if (!esPredefinido) {
+            setNombreOtro(m.nombre);
+        } else {
+            setNombreOtro('');
+        }
         setModoEditar(true);
         setIdEditar(m.idMedicamento);
         setShowModal(true);
@@ -145,6 +158,7 @@ const GestionFarmacia = () => {
             precio: '',
             stock: '50'
         });
+        setNombreOtro('');
         setTouched({});
     };
 
@@ -154,9 +168,10 @@ const GestionFarmacia = () => {
             toast.error("Complete todos los campos requeridos con datos válidos.");
             return;
         }
+        const nombreFinal = form.nombre === 'Otros' ? nombreOtro.trim() : form.nombre;
         try {
             const payload = {
-                nombre: form.nombre,
+                nombre: nombreFinal,
                 laboratorio: form.laboratorio,
                 precio: parseFloat(form.precio)
             };
@@ -171,7 +186,7 @@ const GestionFarmacia = () => {
                 const res = await api.post('/farmacia/registrar', payload);
                 const nuevoMed = {
                     ...res.data,
-                    nombre: form.nombre,
+                    nombre: nombreFinal,
                     laboratorio: form.laboratorio,
                     precio: parseFloat(form.precio),
                     stock: parseInt(form.stock),
@@ -347,8 +362,10 @@ const GestionFarmacia = () => {
                                 required 
                                 value={form.nombre}
                                 onChange={e => {
-                                    setForm({...form, nombre: e.target.value});
+                                    const val = e.target.value;
+                                    setForm({...form, nombre: val});
                                     setTouched({...touched, nombre: true});
+                                    if (val !== 'Otros') setNombreOtro('');
                                 }}
                                 isInvalid={touched.nombre && !form.nombre}
                             >
@@ -356,11 +373,37 @@ const GestionFarmacia = () => {
                                 {nombresPredefinidos.map((nom, index) => (
                                     <option key={index} value={nom}>{nom}</option>
                                 ))}
+                                <option value="Otros">Otros</option>
                             </Form.Select>
                             <Form.Control.Feedback type="invalid">
                                 Debe seleccionar un medicamento.
                             </Form.Control.Feedback>
                         </Form.Group>
+
+                        {form.nombre === 'Otros' && (
+                            <Form.Group className="mb-3">
+                                <Form.Label>Especificar Nombre del Medicamento</Form.Label>
+                                <Form.Control 
+                                    type="text"
+                                    required
+                                    maxLength="100"
+                                    placeholder="Ej: Paracetamol Jarabe Pediátrico"
+                                    value={nombreOtro}
+                                    onChange={e => {
+                                        // Solo letras y espacios
+                                        const soloLetras = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                                        setNombreOtro(soloLetras);
+                                        setTouched({...touched, nombreOtro: true});
+                                    }}
+                                    isInvalid={touched.nombreOtro && !isNombreOtroValido}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreOtro.trim())
+                                        ? "El nombre solo debe contener letras (sin números ni símbolos)."
+                                        : "El nombre del medicamento debe tener más de 5 letras."}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        )}
                         <Form.Group className="mb-3">
                             <Form.Label>Laboratorio</Form.Label>
                             <Form.Select 
@@ -389,16 +432,21 @@ const GestionFarmacia = () => {
                                         type="number" 
                                         step="0.10" 
                                         min="0.10"
+                                        max="999999.99"
                                         required 
                                         value={form.precio}
                                         onChange={e => {
-                                            setForm({...form, precio: e.target.value});
-                                            setTouched({...touched, precio: true});
+                                            const val = e.target.value;
+                                            const parteEntera = val.split('.')[0] || '';
+                                            if (val === '' || (parseFloat(val) <= 999999.99 && parteEntera.length <= 6)) {
+                                                setForm({...form, precio: val});
+                                                setTouched({...touched, precio: true});
+                                            }
                                         }} 
                                         isInvalid={touched.precio && !isPrecioValido}
                                     />
                                     <Form.Control.Feedback type="invalid">
-                                        Ingrese un precio válido.
+                                        El precio debe estar entre S/ 0.10 y S/ 999,999.99 (máximo 6 cifras).
                                     </Form.Control.Feedback>
                                 </Form.Group>
                             </Col>
@@ -408,16 +456,20 @@ const GestionFarmacia = () => {
                                     <Form.Control 
                                         type="number"
                                         min="0"
+                                        max="10000"
                                         required
                                         value={form.stock}
                                         onChange={e => {
-                                            setForm({...form, stock: e.target.value});
-                                            setTouched({...touched, stock: true});
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val === '' || parseInt(val) <= 10000) {
+                                                setForm({...form, stock: val});
+                                                setTouched({...touched, stock: true});
+                                            }
                                         }}
                                         isInvalid={touched.stock && !isStockValido}
                                     />
                                     <Form.Control.Feedback type="invalid">
-                                        Ingrese la cantidad de unidades.
+                                        La cantidad debe estar entre 0 y 10,000 unidades.
                                     </Form.Control.Feedback>
                                 </Form.Group>
                             </Col>

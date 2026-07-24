@@ -42,18 +42,22 @@ const GestionPersonal = () => {
         if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
             if (value.trim().length < 2 || value.trim().length > 50) {
                 errorMsg = "El apellido debe tener entre 2 y 50 caracteres.";
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+                errorMsg = "El apellido solo debe contener letras (sin números).";
             }
         } else if (name === 'dni') {
             if (!/^\d{8}$/.test(value)) {
                 errorMsg = "El DNI debe tener exactamente 8 dígitos numéricos.";
             }
         } else if (name === 'telefono') {
-            if (!/^\d{9}$/.test(value)) {
-                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos.";
+            if (!/^9\d{8}$/.test(value)) {
+                errorMsg = "El teléfono debe comenzar obligatoriamente con 9 y tener 9 dígitos.";
             }
         } else if (name === 'nombre') {
             if (value.trim().length === 0) {
                 errorMsg = "El nombre es requerido.";
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+                errorMsg = "El nombre solo debe contener letras (sin números).";
             }
         } else if (name === 'correo') {
             if (!/\S+@\S+\.\S+/.test(value)) {
@@ -76,10 +80,10 @@ const GestionPersonal = () => {
 
     const isFormValid = () => {
         const isDni = /^\d{8}$/.test(nuevoEmpleado.dni);
-        const isNombre = nuevoEmpleado.nombre.trim().length > 0;
-        const isPaterno = nuevoEmpleado.apellidoPaterno.trim().length >= 2;
-        const isMaterno = nuevoEmpleado.apellidoMaterno.trim().length >= 2;
-        const isTel = /^\d{9}$/.test(nuevoEmpleado.telefono);
+        const isNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(nuevoEmpleado.nombre.trim());
+        const isPaterno = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(nuevoEmpleado.apellidoPaterno.trim());
+        const isMaterno = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(nuevoEmpleado.apellidoMaterno.trim());
+        const isTel = /^9\d{8}$/.test(nuevoEmpleado.telefono);
         const isCorreo = /\S+@\S+\.\S+/.test(nuevoEmpleado.correo);
         const isPass = modoEditar
             ? (nuevoEmpleado.contraseña.length === 0 || nuevoEmpleado.contraseña.length >= 4)
@@ -91,10 +95,16 @@ const GestionPersonal = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newValue = value;
-        if (name === 'dni') {
+        if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+            newValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        } else if (name === 'dni') {
             newValue = value.replace(/\D/g, '').slice(0, 8);
         } else if (name === 'telefono') {
-            newValue = value.replace(/\D/g, '').slice(0, 9);
+            let digits = value.replace(/\D/g, '');
+            if (digits.length > 0 && digits[0] !== '9') {
+                digits = '';
+            }
+            newValue = digits.slice(0, 9);
         }
         setNuevoEmpleado(prev => ({ ...prev, [name]: newValue }));
         setTouched(prev => ({ ...prev, [name]: true }));

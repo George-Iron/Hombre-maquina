@@ -8,6 +8,7 @@ const GestionLaboratorio = () => {
     const [nombresPredefinidos, setNombresPredefinidos] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '' });
+    const [nombreOtro, setNombreOtro] = useState('');
     const [touched, setTouched] = useState({});
 
     // Estado para edición
@@ -18,10 +19,16 @@ const GestionLaboratorio = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [idEliminar, setIdEliminar] = useState(null);
 
+    const isNombreOtroValido = form.nombre === 'Otros' 
+        ? (/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreOtro.trim()) && nombreOtro.trim().length > 5)
+        : true;
+
     const precioNum = parseFloat(form.precio);
-    const isPrecioValido = !isNaN(precioNum) && precioNum > 0;
+    const isPrecioValido = !isNaN(precioNum) && precioNum >= 0.10 && precioNum <= 999999.99;
     const isDescripcionValida = form.descripcion.trim().length >= 3;
-    const isFormValido = form.nombre && isDescripcionValida && isPrecioValido;
+    
+    const isNombreValido = form.nombre === 'Otros' ? (isNombreOtroValido && nombreOtro.trim().length > 5) : Boolean(form.nombre);
+    const isFormValido = isNombreValido && isDescripcionValida && isPrecioValido;
 
     const cargar = async () => {
         try {
@@ -43,7 +50,13 @@ const GestionLaboratorio = () => {
     useEffect(() => { cargar(); }, []);
 
     const handleEditar = (a) => {
-        setForm({ nombre: a.nombre, descripcion: a.descripcion, precio: a.precio });
+        const esPredefinido = nombresPredefinidos.includes(a.nombre);
+        setForm({ 
+            nombre: esPredefinido ? a.nombre : 'Otros', 
+            descripcion: a.descripcion, 
+            precio: a.precio 
+        });
+        setNombreOtro(esPredefinido ? '' : a.nombre);
         setModoEditar(true);
         setIdEditar(a.idTipoAnalisis);
         setShowModal(true);
@@ -74,6 +87,7 @@ const GestionLaboratorio = () => {
         setModoEditar(false);
         setIdEditar(null);
         setForm({ nombre: '', descripcion: '', precio: '' });
+        setNombreOtro('');
         setTouched({});
     };
 
@@ -83,18 +97,18 @@ const GestionLaboratorio = () => {
             toast.error("Complete todos los campos requeridos con datos válidos.");
             return;
         }
+        const nombreFinal = form.nombre === 'Otros' ? nombreOtro.trim() : form.nombre;
+        const payload = {
+            nombre: nombreFinal,
+            descripcion: form.descripcion.trim(),
+            precio: parseFloat(form.precio)
+        };
         try {
             if (modoEditar) {
-                await api.put(`/laboratorio/actualizar/${idEditar}`, {
-                    ...form,
-                    descripcion: form.descripcion.trim()
-                });
+                await api.put(`/laboratorio/actualizar/${idEditar}`, payload);
                 toast.success("Análisis actualizado con éxito.");
             } else {
-                await api.post('/laboratorio/registrar', {
-                    ...form,
-                    descripcion: form.descripcion.trim()
-                });
+                await api.post('/laboratorio/registrar', payload);
                 toast.success("Análisis registrado con éxito.");
             }
             handleCloseModal();
@@ -170,8 +184,10 @@ const GestionLaboratorio = () => {
                                 required 
                                 value={form.nombre}
                                 onChange={e => {
-                                    setForm({...form, nombre: e.target.value});
+                                    const val = e.target.value;
+                                    setForm({...form, nombre: val});
                                     setTouched({...touched, nombre: true});
+                                    if (val !== 'Otros') setNombreOtro('');
                                 }}
                                 isInvalid={touched.nombre && !form.nombre}
                             >
@@ -179,11 +195,37 @@ const GestionLaboratorio = () => {
                                 {nombresPredefinidos.map((nom, index) => (
                                     <option key={index} value={nom}>{nom}</option>
                                 ))}
+                                <option value="Otros">Otros</option>
                             </Form.Select>
                             <Form.Control.Feedback type="invalid">
                                 Debe seleccionar un tipo de análisis.
                             </Form.Control.Feedback>
                         </Form.Group>
+
+                        {form.nombre === 'Otros' && (
+                            <Form.Group className="mb-3">
+                                <Form.Label>Especificar Nombre del Análisis</Form.Label>
+                                <Form.Control 
+                                    type="text"
+                                    required
+                                    maxLength="100"
+                                    placeholder="Ej: Hemograma Completo y Perfil Lipídico"
+                                    value={nombreOtro}
+                                    onChange={e => {
+                                        const soloLetras = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                                        setNombreOtro(soloLetras);
+                                        setTouched({...touched, nombreOtro: true});
+                                    }}
+                                    isInvalid={touched.nombreOtro && !isNombreOtroValido}
+                                />
+                                <Form.Control.Feedback type="invalid">
+                                    {!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(nombreOtro.trim())
+                                        ? "El nombre solo debe contener letras (sin números ni símbolos)."
+                                        : "El nombre del análisis debe tener más de 5 letras."}
+                                </Form.Control.Feedback>
+                            </Form.Group>
+                        )}
+
                         <Form.Group className="mb-3">
                             <Form.Label>Descripción</Form.Label>
                             <Form.Control 
@@ -207,16 +249,21 @@ const GestionLaboratorio = () => {
                                 type="number" 
                                 step="0.10" 
                                 min="0.10"
+                                max="999999.99"
                                 required 
                                 value={form.precio}
                                 onChange={e => {
-                                    setForm({...form, precio: e.target.value});
-                                    setTouched({...touched, precio: true});
+                                    const val = e.target.value;
+                                    const parteEntera = val.split('.')[0] || '';
+                                    if (val === '' || (parseFloat(val) <= 999999.99 && parteEntera.length <= 6)) {
+                                        setForm({...form, precio: val});
+                                        setTouched({...touched, precio: true});
+                                    }
                                 }} 
                                 isInvalid={touched.precio && !isPrecioValido}
                             />
                             <Form.Control.Feedback type="invalid">
-                                El precio debe ser un número mayor a 0.
+                                El precio debe estar entre S/ 0.10 y S/ 999,999.99 (máximo 6 cifras).
                             </Form.Control.Feedback>
                         </Form.Group>
                         

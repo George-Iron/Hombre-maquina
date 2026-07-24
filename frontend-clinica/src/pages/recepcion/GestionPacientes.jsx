@@ -59,14 +59,18 @@ const GestionPacientes = () => {
         } else if (name === 'nombre') {
             if (value.trim().length === 0) {
                 errorMsg = "El nombre es requerido.";
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+                errorMsg = "El nombre solo debe contener letras (sin números).";
             }
         } else if (name === 'apellidoPaterno' || name === 'apellidoMaterno') {
             if (value.trim().length < 2 || value.trim().length > 50) {
                 errorMsg = "El apellido debe tener entre 2 y 50 caracteres.";
+            } else if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(value)) {
+                errorMsg = "El apellido solo debe contener letras (sin números).";
             }
         } else if (name === 'telefono') {
-            if (!/^\d{9}$/.test(value)) {
-                errorMsg = "El teléfono debe tener exactamente 9 dígitos numéricos.";
+            if (!/^9\d{8}$/.test(value)) {
+                errorMsg = "El teléfono debe comenzar obligatoriamente con 9 y tener 9 dígitos.";
             }
         } else if (name === 'fechaNac') {
             if (!value) {
@@ -81,10 +85,10 @@ const GestionPacientes = () => {
 
     const isFormPacienteValid = () => {
         const isDoc = /^\d{8}$/.test(formPaciente.documento);
-        const isNombre = formPaciente.nombre.trim().length > 0;
-        const isPaterno = formPaciente.apellidoPaterno.trim().length >= 2;
-        const isMaterno = formPaciente.apellidoMaterno.trim().length >= 2;
-        const isTel = /^\d{9}$/.test(formPaciente.telefono);
+        const isNombre = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.nombre.trim());
+        const isPaterno = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.apellidoPaterno.trim());
+        const isMaterno = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{2,50}$/.test(formPaciente.apellidoMaterno.trim());
+        const isTel = /^9\d{8}$/.test(formPaciente.telefono);
         const isFecha = formPaciente.fechaNac && formPaciente.fechaNac <= todayStr;
         return isDoc && isNombre && isPaterno && isMaterno && isTel && isFecha;
     };
@@ -92,10 +96,16 @@ const GestionPacientes = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newValue = value;
-        if (name === 'documento') {
+        if (name === 'nombre' || name === 'apellidoPaterno' || name === 'apellidoMaterno') {
+            newValue = value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+        } else if (name === 'documento') {
             newValue = value.replace(/\D/g, '').slice(0, 8);
         } else if (name === 'telefono') {
-            newValue = value.replace(/\D/g, '').slice(0, 9);
+            let digits = value.replace(/\D/g, '');
+            if (digits.length > 0 && digits[0] !== '9') {
+                digits = '';
+            }
+            newValue = digits.slice(0, 9);
         }
         setFormPaciente(prev => ({ ...prev, [name]: newValue }));
         setTouched(prev => ({ ...prev, [name]: true }));

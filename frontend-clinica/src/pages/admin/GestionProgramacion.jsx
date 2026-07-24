@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../config/axios';
-import { Container, Row, Col, Form, Button, Table, Tabs, Tab, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Table, Tabs, Tab, Modal, InputGroup } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const GestionProgramacion = () => {
@@ -9,7 +9,7 @@ const GestionProgramacion = () => {
     const [turnos, setTurnos] = useState([]);
     
     // Formulario Consultorio
-    const [nombreCons, setNombreCons] = useState('');
+    const [numCons, setNumCons] = useState('');
 
     // Formulario Horario
     const [formHorario, setFormHorario] = useState({ idMedico: '', idConsultorio: '', fecha: '', horaInicio: '' });
@@ -24,6 +24,62 @@ const GestionProgramacion = () => {
     const [idEliminar, setIdEliminar] = useState(null);
 
     const todayStr = new Date().toISOString().split('T')[0];
+
+    const getNowTimeStr = () => {
+        const now = new Date();
+        const hrs = String(now.getHours()).padStart(2, '0');
+        const mins = String(now.getMinutes()).padStart(2, '0');
+        return `${hrs}:${mins}`;
+    };
+    const nowTimeStr = getNowTimeStr();
+
+    const handleNumConsChange = (e) => {
+        // Permitir estrictamente solo dígitos (0-9)
+        const soloNumeros = e.target.value.replace(/\D/g, '');
+        setNumCons(soloNumeros);
+    };
+
+    // Validaciones lógicas
+    const isFechaValida = formHorario.fecha && formHorario.fecha >= todayStr;
+    const isHoraValida = Boolean(
+        formHorario.horaInicio && (
+            formHorario.fecha > todayStr || 
+            (formHorario.fecha === todayStr && formHorario.horaInicio > nowTimeStr)
+        )
+    );
+    const isHorarioFormValid = Boolean(
+        formHorario.idMedico && 
+        formHorario.idConsultorio && 
+        isFechaValida && 
+        isHoraValida
+    );
+    
+    const nombreCompletoCons = numCons ? `Consultorio ${numCons}` : '';
+    const consultorioExiste = consultorios.some(c => 
+        c.nombre && c.nombre.trim().toLowerCase() === nombreCompletoCons.trim().toLowerCase()
+    );
+    const isConsultorioValid = numCons.trim().length > 0 && !consultorioExiste;
+
+    const handleGuardarConsultorio = async (e) => {
+        e.preventDefault();
+        if (!numCons.trim()) {
+            toast.error("Por favor ingrese el número del consultorio.");
+            return;
+        }
+        if (consultorioExiste) {
+            toast.error(`El consultorio '${nombreCompletoCons}' ya se encuentra registrado.`);
+            return;
+        }
+        try {
+            await api.post('/programacion/consultorio/registrar', { nombre: nombreCompletoCons });
+            toast.success(`Consultorio '${nombreCompletoCons}' registrado con éxito.`);
+            setNumCons('');
+            cargarConsultorios();
+        } catch (error) { 
+            toast.error("Error al crear consultorio."); 
+            console.error(error);
+        }
+    };
 
     useEffect(() => {
         cargarConsultorios();
@@ -59,27 +115,7 @@ const GestionProgramacion = () => {
         }
     };
 
-    // Validaciones lógicas
-    const isFechaValida = formHorario.fecha && formHorario.fecha >= todayStr;
-    const isHorarioFormValid = formHorario.idMedico && formHorario.idConsultorio && isFechaValida && formHorario.horaInicio;
-    const isConsultorioValid = nombreCons.trim().length >= 3;
 
-    const handleGuardarConsultorio = async (e) => {
-        e.preventDefault();
-        if (!isConsultorioValid) {
-            toast.error("Ingrese un nombre de consultorio válido (mínimo 3 caracteres).");
-            return;
-        }
-        try {
-            await api.post('/programacion/consultorio/registrar', { nombre: nombreCons.trim() });
-            toast.success("Consultorio registrado con éxito.");
-            setNombreCons('');
-            cargarConsultorios();
-        } catch (error) { 
-            toast.error("Error al crear consultorio."); 
-            console.error(error);
-        }
-    };
 
     const handleEditarTurno = (t) => {
         // Buscar el doctor correspondiente por nombre
@@ -125,8 +161,12 @@ const GestionProgramacion = () => {
 
     const handleGuardarHorario = async (e) => {
         e.preventDefault();
+        if (formHorario.fecha === todayStr && formHorario.horaInicio <= getNowTimeStr()) {
+            toast.error("Para el día de hoy, debe seleccionar una hora posterior a la actual.");
+            return;
+        }
         if (!isHorarioFormValid) {
-            toast.error("Verifique que todos los campos del horario sean válidos y la fecha no sea pasada.");
+            toast.error("Verifique que todos los campos del horario sean válidos.");
             return;
         }
 
@@ -269,16 +309,21 @@ const GestionProgramacion = () => {
                                             <Form.Control 
                                                 type="time" 
                                                 required 
+                                                min={formHorario.fecha === todayStr ? nowTimeStr : undefined}
                                                 onChange={e => {
                                                     setFormHorario({...formHorario, horaInicio: e.target.value});
                                                     setHorarioTouched({...horarioTouched, horaInicio: true});
                                                 }} 
                                                 value={formHorario.horaInicio} 
-                                                isInvalid={horarioTouched.horaInicio && !formHorario.horaInicio}
+                                                isInvalid={horarioTouched.horaInicio && !isHoraValida}
                                                 aria-label="Seleccionar hora de inicio del turno" 
                                             />
                                             <Form.Control.Feedback type="invalid">
-                                                Debe seleccionar la hora de inicio.
+                                                {!formHorario.horaInicio 
+                                                    ? "Debe seleccionar la hora de inicio." 
+                                                    : (formHorario.fecha === todayStr && formHorario.horaInicio <= nowTimeStr)
+                                                        ? "Para hoy, la hora debe ser posterior a la hora actual."
+                                                        : "Debe seleccionar una hora válida."}
                                             </Form.Control.Feedback>
                                         </Form.Group>
                                     </Col>
@@ -355,16 +400,21 @@ const GestionProgramacion = () => {
                                         <Form.Group className="mb-3">
                                             <Form.Label>Nombre / Número</Form.Label>
                                             <Form.Control 
-                                                placeholder="Ej: Consultorio 204" 
-                                                value={nombreCons} 
-                                                onChange={e => setNombreCons(e.target.value)} 
-                                                isInvalid={nombreCons.length > 0 && !isConsultorioValid}
+                                                type="text"
+                                                value={numCons ? `Consultorio ${numCons}` : 'Consultorio '} 
+                                                onChange={handleNumConsChange} 
+                                                isInvalid={numCons.length > 0 && consultorioExiste}
                                                 required 
-                                                aria-label="Nombre o número del nuevo consultorio"
+                                                aria-label="Nombre del consultorio"
                                             />
-                                            <Form.Control.Feedback type="invalid">
-                                                El nombre debe tener al menos 3 caracteres.
-                                            </Form.Control.Feedback>
+                                            {consultorioExiste && (
+                                                <Form.Control.Feedback type="invalid">
+                                                    El consultorio "Consultorio {numCons}" ya se encuentra registrado.
+                                                </Form.Control.Feedback>
+                                            )}
+                                            <Form.Text className="text-muted d-block mt-2" style={{ fontSize: '0.825rem' }}>
+                                                💡 Solo ingrese números (ej: 204).
+                                            </Form.Text>
                                         </Form.Group>
                                         <Button type="submit" variant="primary" size="sm" className="w-100" disabled={!isConsultorioValid} aria-label="Registrar nuevo consultorio">
                                             Crear
