@@ -3,12 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../config/axios';
 import { Container, Row, Col, Card, Form, Button, Badge, Accordion, Spinner, Table, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import RecetaPrintModal from '../../components/RecetaPrintModal';
 
-const calcularEdad = (fecha) => {
-    if (!fecha) return 'N/A';
-    const anio = new Date(fecha).getFullYear();
-    if (isNaN(anio)) return 'N/A';
-    return new Date().getFullYear() - anio;
+const calcularEdadExacta = (fechaNac) => {
+    if (!fechaNac) return 'N/A';
+    const hoy = new Date();
+    const cumple = new Date(fechaNac);
+    if (isNaN(cumple.getTime())) return 'N/A';
+
+    let anios = hoy.getFullYear() - cumple.getFullYear();
+    let meses = hoy.getMonth() - cumple.getMonth();
+    let dias = hoy.getDate() - cumple.getDate();
+
+    if (dias < 0) {
+        meses--;
+    }
+    if (meses < 0) {
+        anios--;
+        meses += 12;
+    }
+
+    if (anios < 0) return 'N/A';
+
+    const textoAnios = anios === 1 ? '1 año' : `${anios} años`;
+    const textoMeses = meses === 1 ? '1 mes' : `${meses} meses`;
+
+    if (anios === 0) return textoMeses;
+    return `${textoAnios}, ${textoMeses}`;
 };
 
 const AtencionMedica = () => {
@@ -20,6 +41,8 @@ const AtencionMedica = () => {
     const [paciente, setPaciente] = useState(null);
     const [historia, setHistoria] = useState(null);
     const [historialAtenciones, setHistorialAtenciones] = useState([]);
+    const [showRecetaModal, setShowRecetaModal] = useState(false);
+    const [recetaData, setRecetaData] = useState(null);
 
     const [medicamentos, setMedicamentos] = useState([]);
     const [analisis, setAnalisis] = useState([]);
@@ -127,7 +150,16 @@ const AtencionMedica = () => {
         try {
             await api.post('/atencion/registrar', payload);
             toast.success("Historia clínica y receta guardadas correctamente.");
-            navigate('/medico/agenda');
+            setRecetaData({
+                paciente,
+                doctorNombre: 'Doctor Tratante',
+                diagnostico: diagnostico.trim(),
+                tratamiento: tratamiento.trim(),
+                observaciones: observaciones.trim(),
+                recetaItems,
+                analisisItems
+            });
+            setShowRecetaModal(true);
         } catch (err) {
             toast.error("Hubo un error al guardar la historia clínica.");
             console.error(err);
@@ -146,7 +178,7 @@ const AtencionMedica = () => {
                             {paciente?.nombre}
                         </h2>
                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', margin: 0 }}>
-                            DNI: {paciente?.documento} &middot; Tel: {paciente?.telefono} &middot; Edad: {calcularEdad(paciente?.fechaNac)}{calcularEdad(paciente?.fechaNac) !== 'N/A' ? ' años' : ''}
+                            DNI: {paciente?.documento} &middot; Tel: {paciente?.telefono} &middot; Edad: {calcularEdadExacta(paciente?.fechaNac)}
                         </p>
                     </div>
                     <div className="d-flex gap-2 mt-2 mt-md-0">
@@ -185,11 +217,27 @@ const AtencionMedica = () => {
                                                 {at.receta && at.receta.length > 0 && (
                                                     <div style={{ background: 'var(--surface-inset)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
                                                         <strong style={{ color: 'var(--semantic-success)' }}>Receta:</strong>
-                                                        <ul className="mb-0 ps-3 small">
+                                                        <ul className="mb-2 ps-3 small">
                                                             {at.receta.map((r, i) => (
                                                                 <li key={i}>{r.nombreMedicamento} ({r.dosis})</li>
                                                             ))}
                                                         </ul>
+                                                        <Button 
+                                                            variant="outline-primary" 
+                                                            size="sm" 
+                                                            onClick={() => {
+                                                                setRecetaData({
+                                                                    paciente,
+                                                                    doctorNombre: at.nombreMedico || 'Doctor',
+                                                                    diagnostico: at.diagnostico,
+                                                                    tratamiento: at.tratamiento,
+                                                                    recetaItems: at.receta.map(r => ({ nombre: r.nombreMedicamento, dosis: r.dosis }))
+                                                                });
+                                                                setShowRecetaModal(true);
+                                                            }}
+                                                        >
+                                                            🖨️ Imprimir Receta
+                                                        </Button>
                                                     </div>
                                                 )}
                                             </Accordion.Body>
@@ -349,6 +397,16 @@ const AtencionMedica = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Modal de Impresión de Receta */}
+            <RecetaPrintModal 
+                show={showRecetaModal} 
+                onHide={() => {
+                    setShowRecetaModal(false);
+                    navigate('/medico/agenda');
+                }} 
+                recetaData={recetaData} 
+            />
         </Container>
     );
 };

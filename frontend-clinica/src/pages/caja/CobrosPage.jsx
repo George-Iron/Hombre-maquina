@@ -3,6 +3,7 @@ import api from '../../config/axios';
 import { AuthContext } from '../../context/AuthProvider';
 import { Container, Table, Button, Card, Form, InputGroup, Modal } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import TicketPrintModal from '../../components/TicketPrintModal';
 
 const CobrosPage = () => {
     const { user } = useContext(AuthContext);
@@ -12,6 +13,8 @@ const CobrosPage = () => {
     const [busqueda, setBusqueda] = useState('');
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [selectedCita, setSelectedCita] = useState(null);
+    const [showTicketModal, setShowTicketModal] = useState(false);
+    const [cobroData, setCobroData] = useState(null);
 
     const cargarPendientes = async () => {
         try {
@@ -54,9 +57,17 @@ const CobrosPage = () => {
         try {
             await api.post('/facturacion/generar', payload);
             toast.success("Cobro exitoso.");
+            setCobroData({
+                idCita: selectedCita.idCita,
+                nombrePaciente: selectedCita.nombrePaciente,
+                dniPaciente: selectedCita.dniPaciente || '',
+                infoMedico: selectedCita.infoMedico,
+                monto: selectedCita.precio,
+                cajeroNombre: user?.nombre || 'Cajero'
+            });
+            setShowTicketModal(true);
             cargarPendientes(); 
             setBusqueda('');
-            setSelectedCita(null);
         } catch (error) {
             toast.error("Error al procesar pago");
             console.error(error);
@@ -151,6 +162,16 @@ const CobrosPage = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* Modal de Impresión de Ticket */}
+            <TicketPrintModal 
+                show={showTicketModal} 
+                onHide={() => {
+                    setShowTicketModal(false);
+                    setSelectedCita(null);
+                }} 
+                cobroData={cobroData} 
+            />
         </Container>
     );
 };

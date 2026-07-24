@@ -19,6 +19,8 @@ import GestionPersonal from './pages/admin/GestionPersonal';
 import GestionFarmacia from './pages/admin/GestionFarmacia';
 import GestionLaboratorio from './pages/admin/GestionLaboratorio';
 import GestionProgramacion from './pages/admin/GestionProgramacion';
+import BitacoraAuditoria from './pages/admin/BitacoraAuditoria';
+import ResultadosLaboratorio from './pages/laboratorio/ResultadosLaboratorio';
 
 // Páginas de Enfermería (Nuevo)
 import TriajePage from './pages/enfermeria/TriajePage';
@@ -87,6 +89,8 @@ function App() {
                     <Route path="/admin/farmacia" element={<GestionFarmacia />} />
                     <Route path="/admin/laboratorio" element={<GestionLaboratorio />} />
                     <Route path="/admin/programacion" element={<GestionProgramacion />} />
+                    <Route path="/admin/auditoria" element={<BitacoraAuditoria />} />
+                    <Route path="/laboratorio/resultados" element={<ResultadosLaboratorio />} />
                 </Route>
 
                 {/* ZONA MÉDICA (Doctores + ADMIN) */}

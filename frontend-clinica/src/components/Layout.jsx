@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthProvider';
+import GlobalSearchModal from './GlobalSearchModal';
 
 const Layout = () => {
     const { user, logout } = useContext(AuthContext);
@@ -12,6 +13,18 @@ const Layout = () => {
         return stored === 'dark' ? 'dark' : 'light';
     });
     const [showSidebar, setShowSidebar] = useState(false);
+    const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                setShowGlobalSearch(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
@@ -107,7 +120,13 @@ const Layout = () => {
                                 Farmacia
                             </Link>
                             <Link to="/admin/laboratorio" className={`nav-link-modern ${isActive('/admin/laboratorio')}`}>
-                                Laboratorio
+                                Catálogo Laboratorio
+                            </Link>
+                            <Link to="/laboratorio/resultados" className={`nav-link-modern ${isActive('/laboratorio/resultados')}`}>
+                                Resultados Laboratorio
+                            </Link>
+                            <Link to="/admin/auditoria" className={`nav-link-modern ${isActive('/admin/auditoria')}`}>
+                                Bitácora Auditoría
                             </Link>
                         </>
                     )}
@@ -226,8 +245,26 @@ const Layout = () => {
 
             {/* CONTENIDO PRINCIPAL */}
             <main className="main-content">
+                {/* BARRA SUPERIOR DE BÚSQUEDA GLOBAL RÁPIDA (Ctrl + K) */}
+                <div className="d-flex justify-content-end mb-3 no-print">
+                    <button 
+                        className="btn btn-light btn-sm border d-flex align-items-center gap-2 text-secondary px-3 py-2 shadow-sm rounded-pill"
+                        onClick={() => setShowGlobalSearch(true)}
+                        title="Buscador Inteligente (Ctrl + K)"
+                    >
+                        <span>🔍 Buscador Global...</span>
+                        <kbd className="bg-dark text-white px-2 py-1 rounded small">Ctrl + K</kbd>
+                    </button>
+                </div>
+
                 <Outlet />
             </main>
+
+            {/* MODAL GLOBAL SEARCH */}
+            <GlobalSearchModal 
+                show={showGlobalSearch} 
+                onHide={() => setShowGlobalSearch(false)} 
+            />
         </div>
     );
 };

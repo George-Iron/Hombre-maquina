@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../config/axios';
 import { Container, Table, Button, Modal, Form, Row, Col, InputGroup } from 'react-bootstrap';
 import { toast } from 'react-toastify';
+import ExpedienteModal from '../../components/ExpedienteModal';
 
 const GestionPacientes = () => {
     const [pacientes, setPacientes] = useState([]);
@@ -15,6 +16,10 @@ const GestionPacientes = () => {
     // Estados para eliminación
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [idEliminar, setIdEliminar] = useState(null);
+
+    // Estados para Expediente 360°
+    const [showExpedienteModal, setShowExpedienteModal] = useState(false);
+    const [dniExpediente, setDniExpediente] = useState('');
 
     const [formPaciente, setFormPaciente] = useState({
         documento: '',
@@ -178,16 +183,31 @@ const GestionPacientes = () => {
         }
     };
 
-    const calcularEdad = (fechaNac) => {
+    const calcularEdadExacta = (fechaNac) => {
         if (!fechaNac) return 'N/A';
         const hoy = new Date();
         const cumple = new Date(fechaNac);
-        let edad = hoy.getFullYear() - cumple.getFullYear();
-        const m = hoy.getMonth() - cumple.getMonth();
-        if (m < 0 || (m === 0 && hoy.getDate() < cumple.getDate())) {
-            edad--;
+        if (isNaN(cumple.getTime())) return 'N/A';
+
+        let anios = hoy.getFullYear() - cumple.getFullYear();
+        let meses = hoy.getMonth() - cumple.getMonth();
+        let dias = hoy.getDate() - cumple.getDate();
+
+        if (dias < 0) {
+            meses--;
         }
-        return isNaN(edad) ? 'N/A' : edad;
+        if (meses < 0) {
+            anios--;
+            meses += 12;
+        }
+
+        if (anios < 0) return 'N/A';
+
+        const textoAnios = anios === 1 ? '1 año' : `${anios} años`;
+        const textoMeses = meses === 1 ? '1 mes' : `${meses} meses`;
+
+        if (anios === 0) return textoMeses;
+        return `${textoAnios}, ${textoMeses}`;
     };
 
     const pacientesFiltrados = pacientes.filter(p => {
@@ -248,11 +268,13 @@ const GestionPacientes = () => {
                                     <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600 }}>{p.documento}</td>
                                     <td style={{ fontWeight: 500 }}>{p.nombre} {p.apellido}</td>
                                     <td>
-                                        {p.fechaNac} ({calcularEdad(p.fechaNac)} años)
+                                        <div>{calcularEdadExacta(p.fechaNac)}</div>
+                                        <small className="text-muted">{p.fechaNac}</small>
                                     </td>
                                     <td style={{ fontVariantNumeric: 'tabular-nums' }}>{p.telefono}</td>
                                     <td>
-                                        <div className="d-flex gap-1">
+                                        <div className="d-flex gap-1 flex-wrap">
+                                            <Button variant="outline-info" size="sm" onClick={() => { setDniExpediente(p.documento); setShowExpedienteModal(true); }} aria-label={`Ver expediente 360 de ${p.nombre}`}>📋 Expediente</Button>
                                             <Button variant="outline-primary" size="sm" onClick={() => handleEditar(p)} aria-label={`Editar a ${p.nombre} ${p.apellido}`}>Editar</Button>
                                             <Button variant="outline-danger" size="sm" onClick={() => handleConfirmarEliminar(p.idPaciente)} aria-label={`Eliminar a ${p.nombre} ${p.apellido}`}>Eliminar</Button>
                                         </div>
@@ -399,6 +421,13 @@ const GestionPacientes = () => {
                     <Button variant="danger" onClick={ejecutarEliminacion}>Eliminar</Button>
                 </Modal.Footer>
             </Modal>
+
+            {/* MODAL DE EXPEDIENTE 360° */}
+            <ExpedienteModal 
+                show={showExpedienteModal} 
+                onHide={() => { setShowExpedienteModal(false); setDniExpediente(''); }} 
+                dniPaciente={dniExpediente} 
+            />
         </Container>
     );
 };
