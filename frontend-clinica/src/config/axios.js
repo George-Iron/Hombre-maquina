@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api', 
+    // Con VITE_API_BASE=/api las peticiones pasan por el proxy de Vite (necesario para ngrok).
+    baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8080/api',
 });
 
 // INTERCEPTOR DE SOLICITUD (REQUEST)
